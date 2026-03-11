@@ -1,27 +1,27 @@
 # C--
 
-This is the Compiler for my small C-- (formerly TempleLang) Programming Language.
-It compiles to x64 with Windows 10.
+Compiler for C-- (formerly TempleLang), a small systems language that compiles to x64 via NASM.
+Targets Linux and Windows.
 
 ## Usage
 
-To get the CLI, [download a release](https://github.com/blenderfreaky/TempleLang/releases) or build from source.  
-
-To use the CLI, run `./TempleLang.CLI --help` for help.
+To get the CLI, [download a release](https://github.com/blenderfreaky/TempleLang/releases) or build from source.
 
 ```
 TempleLang.CLI 1.0.0
-Copyright (C) 2020 TempleLang.CLI
 
-  -f, --file        Required. File to compile.
+  -f, --file        Required. Source files to compile. First file determines output path.
+                    Pass multiple files space-separated: -f main.tl stdlib/linux.tl
 
-  -t, --target      Path to place the .exe in.
+  -t, --target      Path to place the output executable in.
 
   -r, --run         Run the generated executable upon successful compilation.
 
   -i, --printIL     Output the intermediate language to the target directory.
 
   -a, --printASM    Output the assembler to the target directory.
+
+  -p, --platform    Target platform: 'windows' or 'linux'. Defaults to current OS.
 
   --help            Display this help screen.
 
@@ -30,21 +30,44 @@ Copyright (C) 2020 TempleLang.CLI
 
 ## Prerequisites
 
-[NASM](https://www.nasm.us/) needs to be installed and the executable needs to be in the PATH variable.
+**All platforms:** [NASM](https://www.nasm.us/) must be installed and on `PATH`.
 
-`LINK.EXE` needs to be installed and in in the PATH variable.
-`LINK.EXE` comes with MSVC Build Tools, which you can get using the [Visual Studio installer](https://visualstudio.microsoft.com/downloads/), however it will not be in your PATH variable and you will need to add it manually.
-It is typically located at `C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\<VERSION>\bin\Hostx64\x64\link.exe`. Check if this is the right install path and add it to your PATH variable.
+**Linux:** `gcc` must be on `PATH` (used as a linker driver for libc).
 
-While not necessarily required, the [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) is needed to interact with the Windows kernel.
-It is currently required to install the Windows SDK to `C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\x64`, even if you're using a different Windows version.
-[You can change this to a different path in the source code](https://github.com/blenderfreaky/TempleLang/blob/master/TempleLang.Compiler/TempleLangHelper.cs#L109).
-The reason for this is that windows doesn't seem to properly add the SDK to the path and this is a "temporary" fix.
+**Windows:** `link.exe` (MSVC linker) must be on `PATH`.
+It ships with the MSVC Build Tools, available via the [Visual Studio installer](https://visualstudio.microsoft.com/downloads/).
+Run the compiler from a Developer Command Prompt or after calling `vcvarsall.bat`, which sets
+the `LIB` environment variable so `link.exe` can find the Windows SDK libraries automatically.
+If neither `LIB` nor `WindowsSdkDir`/`WindowsSdkVersion` are set, the compiler falls back to the
+default Windows 10 SDK path (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\x64` (HACK)).
+
+## Standard library
+
+The `stdlib/` directory provides platform bindings and utilities:
+
+| File | Contents |
+|------|----------|
+| `stdlib/linux.tl` | `malloc`, `free`, `print`, `printDigit` via libc |
+| `stdlib/windows.tl` | `malloc`, `free`, `print`, `printDigit` via kernel32 |
+| `stdlib/strings.tl` | `printNum`, `printNumAny` (platform-agnostic) |
+
+Source files can import other files with `import "relative/path.tl";`. Imports are resolved
+relative to the importing file, deduplicated, and cycle-safe.
 
 ## Example
 
-See [QuickSort](https://github.com/blenderfreaky/TempleLang/tree/master/QuickSort) for a small example of C-- code.
+See [QuickSort](https://github.com/blenderfreaky/TempleLang/tree/master/QuickSort) for an example.
 
-To compile it run `./TempleLang.CLI --file QuickSort.tl`.
-The QuickSort example requires the Windows SDK to be installed.
-See Prerequisites for more info.
+`QuickSort.tl` unconditionally imports `stdlib/strings.tl` for number formatting. The user
+supplies the OS binding at compile time:
+
+```sh
+# Linux
+./TempleLang.CLI -f QuickSort/QuickSort.tl stdlib/linux.tl -r
+
+# Windows (from Developer Command Prompt)
+./TempleLang.CLI -f QuickSort/QuickSort.tl stdlib/windows.tl -r
+
+# Cross-compile (run on Linux, target Windows)
+./TempleLang.CLI -f QuickSort/QuickSort.tl stdlib/windows.tl --platform windows
+```
