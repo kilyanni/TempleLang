@@ -23,7 +23,10 @@ namespace TempleLang.Compiler
             string linkArguments = $"-nostartfiles -no-pie -o \"{execFile}\" \"{objFile}\" {libs}";
 
             Console.WriteLine("> gcc " + linkArguments);
-            Process.Start("gcc", linkArguments).WaitForExit();
+            var gcc = Process.Start("gcc", linkArguments);
+            gcc.WaitForExit();
+            if (gcc.ExitCode != 0)
+                Console.Error.WriteLine($"error: gcc exited with code {gcc.ExitCode}");
         }
 
         private static string ExtractLibName(string import)

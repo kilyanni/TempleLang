@@ -86,4 +86,4 @@ proc printArr(arr : ptr, size : long) : long
 
 proc arrAlloc(size : long) : ptr => malloc(size * 8);
 
-proc arrIndex(arr : ptr, index : long) : ptr => arr + 7 + 8*index;
+proc arrIndex(arr : ptr, index : long) : ptr => arr + 8*index;

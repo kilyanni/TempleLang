@@ -103,6 +103,11 @@
 
                     if (!visited.Add(importPath)) continue;
 
+                    if (!File.Exists(importPath))
+                        return ParserResult.Error<Parser.NamespaceDeclaration, Token>(
+                            $"Import file not found: '{importDecl.Path}' (resolved to '{importPath}')",
+                            default);
+
                     var text = File.ReadAllText(importPath);
                     using var sr = new StringReader(text);
                     var lexemes = Lex(sr, new SourceFile(Path.GetFileName(importPath), importPath));
@@ -164,9 +169,13 @@
 
             string nasmArguments = $"-f {toolchain.NasmFormat} -o \"{objFile}\" \"{asmFile}\"";
             Console.WriteLine("> nasm " + nasmArguments);
-            Process.Start("nasm", nasmArguments).WaitForExit();
-
-            if (!File.Exists(objFile)) return null;
+            var nasm = Process.Start("nasm", nasmArguments);
+            nasm.WaitForExit();
+            if (nasm.ExitCode != 0)
+            {
+                Console.Error.WriteLine($"error: nasm exited with code {nasm.ExitCode}");
+                return null;
+            }
 
             Directory.CreateDirectory(Path.GetDirectoryName(execFile));
 

@@ -410,7 +410,6 @@
                 .GetAllInAt(index)
                 .Select(x => (Variable: x, Memory: GetMemory(x)))
                 .Where(x => !(x.Memory is StackLocation)) // Don't move if already on the stack
-                                                          //.Distinct() // HACK
                 .Select((x, i) => (Variable: x, Temporary: new StackLocation(RegisterAllocation.StackOffset + 8 + (i * 8), 8)))
                 .ToDictionary(x => x.Variable.Memory, x => (x.Temporary, x.Variable.Variable));
 
