@@ -169,10 +169,20 @@
 
             string nasmArguments = $"-f {toolchain.NasmFormat} -o \"{objFile}\" \"{asmFile}\"";
             Console.WriteLine("> nasm " + nasmArguments);
-            var nasm = Process.Start("nasm", nasmArguments);
+            var nasmPsi = new ProcessStartInfo("nasm", nasmArguments)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+            var nasm = Process.Start(nasmPsi)!;
+            var nasmStdout = nasm.StandardOutput.ReadToEndAsync();
+            var nasmStderr = nasm.StandardError.ReadToEndAsync();
             nasm.WaitForExit();
             if (nasm.ExitCode != 0)
             {
+                var nasmOutput = nasmStdout.Result + nasmStderr.Result;
+                if (!string.IsNullOrWhiteSpace(nasmOutput)) Console.Error.Write(nasmOutput);
                 Console.Error.WriteLine($"error: nasm exited with code {nasm.ExitCode}");
                 return null;
             }

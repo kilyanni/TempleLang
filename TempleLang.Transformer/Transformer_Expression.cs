@@ -15,6 +15,7 @@
                 TernaryExpression expr => TransformExpressionCore(expr, target),
                 CallExpression expr => TransformExpressionCore(expr, target),
                 CastExpression expr => TransformExpressionCore(expr, target),
+                InvalidExpression _ => Array.Empty<IInstruction>(),
                 IValue expr => TransformValue(expr, target),
                 _ => throw new ArgumentException(nameof(expression)),
             };

@@ -23,10 +23,22 @@ namespace TempleLang.Compiler
             string linkArguments = $"/entry:_start /debug /subsystem:console /out:\"{execFile}\" \"{objFile}\" {linkLibraries}";
 
             Console.WriteLine("> link " + linkArguments);
-            var link = Process.Start("link", linkArguments);
+            var linkPsi = new ProcessStartInfo("link", linkArguments)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+            var link = Process.Start(linkPsi)!;
+            var linkStdout = link.StandardOutput.ReadToEndAsync();
+            var linkStderr = link.StandardError.ReadToEndAsync();
             link.WaitForExit();
             if (link.ExitCode != 0)
+            {
+                var linkOutput = linkStdout.Result + linkStderr.Result;
+                if (!string.IsNullOrWhiteSpace(linkOutput)) Console.Error.Write(linkOutput);
                 Console.Error.WriteLine($"error: link exited with code {link.ExitCode}");
+            }
         }
 
         private static string? DetectWindowsKitLibPath()
