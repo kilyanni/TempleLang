@@ -12,14 +12,19 @@
     {
         public Dictionary<string, Local> Locals { get; }
 
-        public CodeBinder(Binder? parent = null) : base(parent)
+        private readonly bool _insideLoop;
+        public bool IsInsideLoop => _insideLoop || (Parent is CodeBinder cb && cb.IsInsideLoop);
+
+        public CodeBinder(Binder? parent = null, bool insideLoop = false) : base(parent)
         {
             Locals = new Dictionary<string, Local>();
+            _insideLoop = insideLoop;
         }
 
-        public CodeBinder(Dictionary<string, Local> symbols, Binder? parent = null) : base(parent)
+        public CodeBinder(Dictionary<string, Local> symbols, Binder? parent = null, bool insideLoop = false) : base(parent)
         {
             Locals = symbols;
+            _insideLoop = insideLoop;
         }
 
         public override IDeclaration? FindDeclaration(S.SyntaxNode expr) => Parent?.FindDeclaration(expr);

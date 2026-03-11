@@ -26,8 +26,22 @@
             S.WhileStatement stmt => BindStatement(stmt),
             S.ForStatement stmt => BindStatement(stmt),
             S.ReturnStatement stmt => BindStatement(stmt),
-            _ => throw new ArgumentException(nameof(syntaxStatement)),
+            S.BreakStatement stmt => BindBreakContinue(stmt, isBreak: true),
+            S.ContinueStatement stmt => BindBreakContinue(stmt, isBreak: false),
+            _ => BindInvalidStatement(syntaxStatement),
         };
+
+        private IStatement BindBreakContinue(S.Statement stmt, bool isBreak)
+        {
+            if (!IsInsideLoop) Error(DiagnosticCode.InvalidOperator, stmt.Location);
+            return isBreak ? (IStatement)new IS.BreakStatement() : new IS.ContinueStatement();
+        }
+
+        private IStatement BindInvalidStatement(S.Statement stmt)
+        {
+            Error(DiagnosticCode.TypeInferenceFailed, stmt.Location);
+            return new IS.ExpressionStatement(new InvalidExpression(stmt.Location));
+        }
 
         public IS.ExpressionStatement BindStatement(S.ExpressionStatement stmt) =>
             new IS.ExpressionStatement(BindExpression(stmt.Expression));
@@ -78,15 +92,18 @@
                 BindStatement(stmt.TrueStatement),
                 BindNullableStatement(stmt.FalseStatement));
 
-        public IS.WhileStatement BindStatement(S.WhileStatement stmt) =>
-            new IS.WhileStatement(
+        public IS.WhileStatement BindStatement(S.WhileStatement stmt)
+        {
+            using var loopBinder = new CodeBinder(this, insideLoop: true);
+            return new IS.WhileStatement(
                 BindExpression(stmt.Condition),
-                BindStatement(stmt.Statement),
+                loopBinder.BindStatement(stmt.Statement),
                 stmt.IsDoLoop);
+        }
 
         public IS.ForStatement BindStatement(S.ForStatement stmt)
         {
-            using CodeBinder codeBinder = new CodeBinder(this);
+            using CodeBinder codeBinder = new CodeBinder(this, insideLoop: true);
 
             return new IS.ForStatement(
                 codeBinder.BindNullableStatement(stmt.Prefix),

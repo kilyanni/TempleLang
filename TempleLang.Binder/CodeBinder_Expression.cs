@@ -27,8 +27,14 @@
             S.CastExpression expr => BindExpression(expr),
             S.Identifier expr => BindExpression(expr),
             S.Literal expr => BindLiteral(expr),
-            _ => throw new ArgumentException(nameof(syntaxExpression)),
+            _ => BindInvalidExpression(syntaxExpression),
         };
+
+        private IExpression BindInvalidExpression(S.Expression? expr)
+        {
+            Error(DiagnosticCode.TypeInferenceFailed, expr?.Location ?? FileLocation.Null);
+            return new InvalidExpression(expr?.Location ?? FileLocation.Null);
+        }
 
         public IExpression BindExpression(S.PrefixExpression expr)
         {
@@ -207,8 +213,8 @@
             }
             else if (op == AccessOperationType.Static)
             {
-                //TODO
-                throw new NotImplementedException();
+                Error(DiagnosticCode.InvalidOperator, expr.Accessor.Location);
+                return new InvalidExpression(expr.Accessor.Location);
             }
 
             Error(DiagnosticCode.InvalidOperator, expr.Accessor.Location);

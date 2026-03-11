@@ -13,8 +13,14 @@
             BoolLiteral expr => BindLiteral(expr),
             NumberLiteral expr => BindLiteral(expr),
             StringLiteral expr => BindLiteral(expr),
-            _ => throw new ArgumentException(nameof(syntaxLiteral)),
+            _ => BindInvalidLiteral(syntaxLiteral),
         };
+
+        private IValue BindInvalidLiteral(Literal literal)
+        {
+            Error(DiagnosticCode.TypeInferenceFailed, literal.Location);
+            return Local.Unknown;
+        }
 
         public IValue BindLiteral(BoolLiteral expr) => new Constant<bool>(expr.Value, PrimitiveType.Bool);
 

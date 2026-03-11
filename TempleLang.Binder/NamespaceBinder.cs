@@ -40,6 +40,10 @@
                         Declarations[decl] = ExploreDeclaration(decl);
                         break;
 
+                    case S.ImportDeclaration decl:
+                        Error(DiagnosticCode.TypeInferenceFailed, decl.Location);
+                        break;
+
                     default:
                         throw new InvalidOperationException("Invalid declaration");
                 }
