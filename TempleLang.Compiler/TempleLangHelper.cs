@@ -41,25 +41,38 @@
             ICallingConvention callingConvention,
             out IParserResult<Parser.NamespaceDeclaration, Token>? parserError,
             out IEnumerable<DiagnosticInfo> diagnostics)
+            => Compile(new[] { (text, sourceFile) }, callingConvention, out parserError, out diagnostics);
+
+        public static Compilation? Compile(
+            IEnumerable<(string Text, SourceFile Source)> files,
+            ICallingConvention callingConvention,
+            out IParserResult<Parser.NamespaceDeclaration, Token>? parserError,
+            out IEnumerable<DiagnosticInfo> diagnostics)
         {
-            using var stringReader = new StringReader(text);
+            parserError = null;
+            Parser.NamespaceDeclaration? merged = null;
 
-            var lexemes = Lex(stringReader, sourceFile);
-            var parserResult = ParseEoF(Parser.NamespaceDeclaration.FileParser, lexemes);
-
-            if (!parserResult.IsSuccessful)
+            foreach (var (text, source) in files)
             {
-                diagnostics = Array.Empty<DiagnosticInfo>();
-                parserError = parserResult;
+                using var stringReader = new StringReader(text);
+                var lexemes = Lex(stringReader, source);
+                var result = ParseEoF(Parser.NamespaceDeclaration.FileParser, lexemes);
 
-                return null;
+                if (!result.IsSuccessful)
+                {
+                    diagnostics = Array.Empty<DiagnosticInfo>();
+                    parserError = result;
+                    return null;
+                }
+
+                if (merged == null) merged = result.Result;
+                else merged.Declarations.AddRange(result.Result.Declarations);
             }
 
-            parserError = null;
+            if (merged == null) { diagnostics = Array.Empty<DiagnosticInfo>(); return null; }
 
             var compiler = new DeclarationCompiler(callingConvention);
-
-            var procedureCompilations = compiler.Compile(parserResult.Result, out diagnostics);
+            var procedureCompilations = compiler.Compile(merged, out diagnostics);
             if (procedureCompilations == null) return null;
             return new Compilation(procedureCompilations, compiler.Externs, compiler.Imports, compiler.ConstantTable);
         }

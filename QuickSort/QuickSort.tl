@@ -82,17 +82,9 @@ proc printArr(arr : ptr, size : long) : long
     }
 }
 
-proc arrSize(arr : ptr) : long => deref arrIndex(arr, -1);
-
 proc arrAlloc(size : long) : ptr => malloc(size * 8);
 
 proc arrIndex(arr : ptr, index : long) : ptr => arr + 7 + 8*index;
-
-proc malloc(size : long) : ptr
-    using "libc.so.6";
-
-proc free(ptr : ptr) : long
-    using "libc.so.6";
 
 proc printNum(num : long) : long => printNumAny(num, 10);
 
@@ -110,17 +102,3 @@ proc printNumAny(num : long, base : long) : long
     if (rest > 0) printNumAny(rest, base);
     printDigit(digit);
 }
-
-proc printDigit(digit : long) : long
-{
-    let digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    //  ^~~~~~ This is a pointer
-
-    //           v This is pointer arithmetic (UTF-8: 1 byte per char)
-    print(digits + digit, 1);
-}
-
-proc print(buf : ptr, len : long) : long => write(1, buf, len);
-
-proc write(fd : long, buf : ptr, count : long) : long
-    using "libc.so.6";

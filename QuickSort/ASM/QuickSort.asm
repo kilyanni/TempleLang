@@ -1048,66 +1048,28 @@ printArr: ; printArr(arr : ptr, size : long) : long
         add     qword rsp, 48 ; Return stack
         ret     
     
-arrSize: ; arrSize(arr : ptr) : long
+arrAlloc: ; arrAlloc(size : long) : ptr
         sub     qword rsp, 32 ; Allocate stack
     
-      ; <>T62 = ArithmeticNegation 1
-      ; In = { arr }
-        mov     qword r14, qword TRUE ; Assign operand to target
-        neg     qword r14
-      ; Out = { arr, <>T62 }
-      ; /
-    
-      ; <>T61 = Call arrIndex(arr, <>T62)
-      ; In = { arr, <>T62 }
-        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (arr)
-        mov     qword [rsp + 8], qword r14 ; Store live variable onto stack (<>T62)
-        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
-        mov     qword rsi, qword [rsp + 8] ; Pass parameter #1
-        call    arrIndex
-        mov     qword r13, qword rax ; Assign return value to <>T61
+      ; <>T61 = size Multiply 8
+      ; In = { size }
+        mov     qword r15, qword rdi ; Assign LHS to target memory
+        imul    qword r15, qword longC9
       ; Out = { <>T61 }
       ; /
     
-      ; <>T60 = Dereference <>T61
+      ; <>T60 = Call malloc(<>T61)
       ; In = { <>T61 }
-        mov     qword r12, [r13] ; Dereference <>T61
+        mov     qword [rsp + 16], qword r15 ; Store live variable onto stack (<>T61)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        call    malloc
+        mov     qword r13, qword rax ; Assign return value to <>T60
       ; Out = { <>T60 }
       ; /
     
       ; Return <>T60
       ; In = { <>T60 }
-        mov     qword rax, qword r12 ; Return <>T60
-        jmp     .__exit
-      ; Out = {  }
-      ; /
-    
-    .__exit:          ; Function exit/return label
-        add     qword rsp, 32 ; Return stack
-        ret     
-    
-arrAlloc: ; arrAlloc(size : long) : ptr
-        sub     qword rsp, 32 ; Allocate stack
-    
-      ; <>T64 = size Multiply 8
-      ; In = { size }
-        mov     qword r15, qword rdi ; Assign LHS to target memory
-        imul    qword r15, qword longC9
-      ; Out = { <>T64 }
-      ; /
-    
-      ; <>T63 = Call malloc(<>T64)
-      ; In = { <>T64 }
-        mov     qword [rsp + 16], qword r15 ; Store live variable onto stack (<>T64)
-        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
-        call    malloc
-        mov     qword r13, qword rax ; Assign return value to <>T63
-      ; Out = { <>T63 }
-      ; /
-    
-      ; Return <>T63
-      ; In = { <>T63 }
-        mov     qword rax, qword r13 ; Return <>T63
+        mov     qword rax, qword r13 ; Return <>T60
         jmp     .__exit
       ; Out = {  }
       ; /
@@ -1120,30 +1082,30 @@ arrIndex: ; arrIndex(arr : ptr, index : long) : ptr
         sub     qword rsp, 16 ; Allocate stack
     
         mov     qword r14, qword rsi
-      ; <>T66 = arr Add 7
+      ; <>T63 = arr Add 7
       ; In = { arr, index }
         mov     qword r15, qword rdi ; Assign LHS to target memory
         add     qword r15, qword longC10
-      ; Out = { <>T66, index }
+      ; Out = { <>T63, index }
       ; /
     
-      ; <>T67 = 8 Multiply index
-      ; In = { <>T66, index }
+      ; <>T64 = 8 Multiply index
+      ; In = { <>T63, index }
         mov     qword r12, qword longC9 ; Assign LHS to target memory
         imul    qword r12, qword r14
-      ; Out = { <>T66, <>T67 }
+      ; Out = { <>T63, <>T64 }
       ; /
     
-      ; <>T65 = <>T66 Add <>T67
-      ; In = { <>T66, <>T67 }
+      ; <>T62 = <>T63 Add <>T64
+      ; In = { <>T63, <>T64 }
         mov     qword rdi, qword r15 ; Assign LHS to target memory
         add     qword rdi, qword r12
-      ; Out = { <>T65 }
+      ; Out = { <>T62 }
       ; /
     
-      ; Return <>T65
-      ; In = { <>T65 }
-        mov     qword rax, qword rdi ; Return <>T65
+      ; Return <>T62
+      ; In = { <>T62 }
+        mov     qword rax, qword rdi ; Return <>T62
         jmp     .__exit
       ; Out = {  }
       ; /
@@ -1155,19 +1117,19 @@ arrIndex: ; arrIndex(arr : ptr, index : long) : ptr
 printNum: ; printNum(num : long) : long
         sub     qword rsp, 32 ; Allocate stack
     
-      ; <>T68 = Call printNumAny(num, 10)
+      ; <>T65 = Call printNumAny(num, 10)
       ; In = { num }
         mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (num)
         mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
         mov     qword rsi, qword longC2 ; Pass parameter #1
         call    printNumAny
-        mov     qword r15, qword rax ; Assign return value to <>T68
-      ; Out = { <>T68 }
+        mov     qword r15, qword rax ; Assign return value to <>T65
+      ; Out = { <>T65 }
       ; /
     
-      ; Return <>T68
-      ; In = { <>T68 }
-        mov     qword rax, qword r15 ; Return <>T68
+      ; Return <>T65
+      ; In = { <>T65 }
+        mov     qword rax, qword r15 ; Return <>T65
         jmp     .__exit
       ; Out = {  }
       ; /
@@ -1180,7 +1142,7 @@ printNumAny: ; printNumAny(num : long, base : long) : long
         sub     qword rsp, 48 ; Allocate stack
     
         mov     qword r14, qword rsi
-      ; <>T69 = num ComparisonLessThan 0
+      ; <>T66 = num ComparisonLessThan 0
       ; In = { num, base }
         cmp     qword rdi, qword FALSE ; Set condition codes according to operands
         jl      .CG0 ; Jump to True if the comparison is true
@@ -1189,25 +1151,25 @@ printNumAny: ; printNumAny(num : long, base : long) : long
     .CG0:          ; True
         mov     qword r13, qword TRUE ; Assign true to output
     .CG1:          ; Exit
-      ; Out = { num, base, <>T69 }
+      ; Out = { num, base, <>T66 }
       ; /
     
-      ; If <>T69 Jump .T70
-      ; In = { num, base, <>T69 }
+      ; If <>T66 Jump .T67
+      ; In = { num, base, <>T66 }
         test    qword r13, qword r13 ; Set condition codes according to condition
-        jnz     .T70 ; Jump if condition is true/non-zero
+        jnz     .T67 ; Jump if condition is true/non-zero
       ; Out = { num, base }
       ; /
     
-      ; Jump .T71
+      ; Jump .T68
       ; In = { num, base }
-        jmp     .T71
+        jmp     .T68
       ; Out = { num, base }
       ; /
     
-      ; .T70:
+      ; .T67:
       ; In = { num, base }
-    .T70:         
+    .T67:         
       ; Out = { num, base }
       ; /
     
@@ -1223,18 +1185,18 @@ printNumAny: ; printNumAny(num : long, base : long) : long
       ; Out = { num, base }
       ; /
     
-      ; <>T72 = ArithmeticNegation num
+      ; <>T69 = ArithmeticNegation num
       ; In = { num, base }
         mov     qword r13, qword rdi ; Assign operand to target
         neg     qword r13
-      ; Out = { num, base, <>T72 }
+      ; Out = { num, base, <>T69 }
       ; /
     
-      ; _ = Call printNum(<>T72)
-      ; In = { num, base, <>T72 }
+      ; _ = Call printNum(<>T69)
+      ; In = { num, base, <>T69 }
         mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (num)
         mov     qword [rsp + 24], qword r14 ; Store live variable onto stack (base)
-        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T72)
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T69)
         mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
         call    printNum
         mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (num)
@@ -1248,43 +1210,43 @@ printNumAny: ; printNumAny(num : long, base : long) : long
       ; Out = { num, base }
       ; /
     
-      ; .T71:
+      ; .T68:
       ; In = { num, base }
-    .T71:         
+    .T68:         
       ; Out = { num, base }
       ; /
     
-      ; <>T73 = num Remainder base
+      ; <>T70 = num Remainder base
       ; In = { num, base }
         xor     qword rdx, qword rdx ; Empty out higher bits of dividend
         mov     qword rax, qword rdi ; Assign LHS to dividend
         idiv    qword r14 ; Assign remainder to RDX, quotient to RAX
         mov     qword r13, qword rdx ; Assign result to target memory
-      ; Out = { <>T73, num, base }
+      ; Out = { <>T70, num, base }
       ; /
     
-      ; _ = digit Assign <>T73
-      ; In = { <>T73, num, base }
+      ; _ = digit Assign <>T70
+      ; In = { <>T70, num, base }
         mov     qword r12, qword r13
       ; Out = { digit, num, base }
       ; /
     
-      ; <>T74 = num Divide base
+      ; <>T71 = num Divide base
       ; In = { digit, num, base }
         xor     qword rdx, qword rdx ; Empty out higher bits of dividend
         mov     qword rax, qword rdi ; Assign LHS to dividend
         idiv    qword r14 ; Assign remainder to RDX, quotient to RAX
         mov     qword r11, qword rax ; Assign result to target memory
-      ; Out = { digit, <>T74, base }
+      ; Out = { digit, <>T71, base }
       ; /
     
-      ; _ = rest Assign <>T74
-      ; In = { digit, <>T74, base }
+      ; _ = rest Assign <>T71
+      ; In = { digit, <>T71, base }
         mov     qword r13, qword r11
       ; Out = { digit, rest, base }
       ; /
     
-      ; <>T75 = rest ComparisonGreaterThan 0
+      ; <>T72 = rest ComparisonGreaterThan 0
       ; In = { digit, rest, base }
         cmp     qword r13, qword FALSE ; Set condition codes according to operands
         jg      .CG2 ; Jump to True if the comparison is true
@@ -1293,25 +1255,25 @@ printNumAny: ; printNumAny(num : long, base : long) : long
     .CG2:          ; True
         mov     qword rdi, qword TRUE ; Assign true to output
     .CG3:          ; Exit
-      ; Out = { digit, rest, base, <>T75 }
+      ; Out = { digit, rest, base, <>T72 }
       ; /
     
-      ; If <>T75 Jump .T76
-      ; In = { digit, rest, base, <>T75 }
+      ; If <>T72 Jump .T73
+      ; In = { digit, rest, base, <>T72 }
         test    qword rdi, qword rdi ; Set condition codes according to condition
-        jnz     .T76 ; Jump if condition is true/non-zero
+        jnz     .T73 ; Jump if condition is true/non-zero
       ; Out = { digit, rest, base }
       ; /
     
-      ; Jump .T77
+      ; Jump .T74
       ; In = { digit }
-        jmp     .T77
+        jmp     .T74
       ; Out = { digit }
       ; /
     
-      ; .T76:
+      ; .T73:
       ; In = { digit, rest, base }
-    .T76:         
+    .T73:         
       ; Out = { digit, rest, base }
       ; /
     
@@ -1327,9 +1289,9 @@ printNumAny: ; printNumAny(num : long, base : long) : long
       ; Out = { digit }
       ; /
     
-      ; .T77:
+      ; .T74:
       ; In = { digit }
-    .T77:         
+    .T74:         
       ; Out = { digit }
       ; /
     
@@ -1345,6 +1307,33 @@ printNumAny: ; printNumAny(num : long, base : long) : long
         add     qword rsp, 48 ; Return stack
         ret     
     
+print: ; print(buf : ptr, len : long) : long
+        sub     qword rsp, 32 ; Allocate stack
+    
+        mov     qword r13, qword rsi
+      ; <>T75 = Call write(1, buf, len)
+      ; In = { buf, len }
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (buf)
+        mov     qword [rsp + 8], qword r13 ; Store live variable onto stack (len)
+        mov     qword rdi, qword TRUE ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 16] ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 8] ; Pass parameter #2
+        call    write
+        mov     qword r15, qword rax ; Assign return value to <>T75
+      ; Out = { <>T75 }
+      ; /
+    
+      ; Return <>T75
+      ; In = { <>T75 }
+        mov     qword rax, qword r15 ; Return <>T75
+        jmp     .__exit
+      ; Out = {  }
+      ; /
+    
+    .__exit:          ; Function exit/return label
+        add     qword rsp, 32 ; Return stack
+        ret     
+    
 printDigit: ; printDigit(digit : long) : long
         sub     qword rsp, 32 ; Allocate stack
     
@@ -1354,46 +1343,19 @@ printDigit: ; printDigit(digit : long) : long
       ; Out = { digits, digit }
       ; /
     
-      ; <>T78 = digits Add digit
+      ; <>T76 = digits Add digit
       ; In = { digits, digit }
         mov     qword r13, qword r15 ; Assign LHS to target memory
         add     qword r13, qword rdi
-      ; Out = { <>T78 }
+      ; Out = { <>T76 }
       ; /
     
-      ; _ = Call print(<>T78, 1)
-      ; In = { <>T78 }
-        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T78)
+      ; _ = Call print(<>T76, 1)
+      ; In = { <>T76 }
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T76)
         mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
         mov     qword rsi, qword TRUE ; Pass parameter #1
         call    print
-      ; Out = {  }
-      ; /
-    
-    .__exit:          ; Function exit/return label
-        add     qword rsp, 32 ; Return stack
-        ret     
-    
-print: ; print(buf : ptr, len : long) : long
-        sub     qword rsp, 32 ; Allocate stack
-    
-        mov     qword r13, qword rsi
-      ; <>T79 = Call write(1, buf, len)
-      ; In = { buf, len }
-        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (buf)
-        mov     qword [rsp + 8], qword r13 ; Store live variable onto stack (len)
-        mov     qword rdi, qword TRUE ; Pass parameter #0
-        mov     qword rsi, qword [rsp + 16] ; Pass parameter #1
-        mov     qword rdx, qword [rsp + 8] ; Pass parameter #2
-        call    write
-        mov     qword r15, qword rax ; Assign return value to <>T79
-      ; Out = { <>T79 }
-      ; /
-    
-      ; Return <>T79
-      ; In = { <>T79 }
-        mov     qword rax, qword r15 ; Return <>T79
-        jmp     .__exit
       ; Out = {  }
       ; /
     

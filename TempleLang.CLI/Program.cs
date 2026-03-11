@@ -3,16 +3,18 @@
     using CommandLine;
     using Compiler;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using TempleLang.CodeGenerator.NASM;
     using TempleLang.Lexer;
 
     public class CompilerOptions
     {
-        [Option('f', "file", Required = true, HelpText = "File to compile.")]
-        public string? SourceCode { get; set; }
+        [Option('f', "file", Required = true, Min = 1, HelpText = "Source files to compile. First file determines output path.")]
+        public IEnumerable<string> SourceFiles { get; set; } = Array.Empty<string>();
 
         [Option('t', "target", HelpText = "Path to place the .exe in.")]
         public string? Target { get; set; }
@@ -37,9 +39,10 @@
             Parser.Default.ParseArguments<CompilerOptions>(args).WithParsed(x =>
             {
                 var (callingConvention, toolchain) = ResolvePlatform(x.Platform);
-                var targetPath = Path.GetDirectoryName(x.Target ?? x.SourceCode!) ?? throw new InvalidOperationException("Invalid sourcecode path");
+                var primaryFile = x.SourceFiles.First();
+                var targetPath = Path.GetDirectoryName(x.Target ?? primaryFile) ?? throw new InvalidOperationException("Invalid source path");
                 var tempPath = x.PrintASM ? Path.Combine(targetPath, "ASM") : Path.GetTempPath();
-                var execFile = Compile(x.SourceCode!, tempPath, x.Target, x.PrintIL, callingConvention, toolchain);
+                var execFile = Compile(x.SourceFiles, tempPath, x.Target, x.PrintIL, callingConvention, toolchain);
 
                 if (execFile == null) return;
 
@@ -65,29 +68,39 @@
             return (LinuxX64CallingConvention.Instance, LinuxToolchain.Instance);
         }
 
-        private static string? Compile(string path, string tempPath, string? execFile, bool printIL, ICallingConvention callingConvention, IToolchain toolchain)
+        private static string? Compile(IEnumerable<string> paths, string tempPath, string? execFile, bool printIL, ICallingConvention callingConvention, IToolchain toolchain)
         {
             var stopwatch = Stopwatch.StartNew();
-            var text = File.ReadAllText(path);
 
-            string fullPath = Path.GetFullPath(path);
-            Console.WriteLine("Starting Compilation of " + fullPath);
+            var files = paths.Select(path =>
+            {
+                var fullPath = Path.GetFullPath(path);
+                var text = File.ReadAllText(fullPath);
+                Console.WriteLine("Compiling " + fullPath);
+                return (Text: text, Source: new SourceFile(Path.GetFileName(path), fullPath));
+            }).ToList();
 
-            var compiled = TempleLangHelper.Compile(text, new SourceFile(Path.GetFileName(path), fullPath), callingConvention, out var parserError, out var diagnostics);
+            var compiled = TempleLangHelper.Compile(files.Select(f => (f.Text, f.Source)), callingConvention, out var parserError, out var diagnostics);
 
             if (parserError != null) Console.WriteLine(parserError.ToString());
 
-            foreach (var diagnostic in diagnostics) Console.WriteLine(diagnostic.ToStringFancy(text.Split('\n')));
+            var textsByPath = files.ToDictionary(f => f.Source.Path, f => f.Text.Split('\n'));
+            foreach (var diagnostic in diagnostics)
+            {
+                var lines = diagnostic.Location?.File?.Path is { } path && textsByPath.TryGetValue(path, out var t) ? t : Array.Empty<string>();
+                Console.WriteLine(diagnostic.ToStringFancy(lines));
+            }
 
             if (compiled == null) return null;
 
+            var primaryPath = files[0].Source.Path;
             execFile ??= Path.Combine(
-                Path.GetDirectoryName(path) ?? throw new ArgumentException("Invalid path", nameof(path)),
-                Path.GetFileNameWithoutExtension(path) + ".exe");
+                Path.GetDirectoryName(primaryPath) ?? throw new ArgumentException("Invalid path"),
+                Path.GetFileNameWithoutExtension(primaryPath) + ".exe");
 
             var file = TempleLangHelper.GenerateExecutable(compiled,
                                                            toolchain,
-                                                           Path.GetFileNameWithoutExtension(path + Guid.NewGuid().ToString()),
+                                                           Path.GetFileNameWithoutExtension(primaryPath + Guid.NewGuid().ToString()),
                                                            tempPath,
                                                            execFile,
                                                            printIL);
