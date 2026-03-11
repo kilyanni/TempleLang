@@ -20,6 +20,7 @@
 
         public static readonly Parser<Declaration, Token> Parser =
             ProcedureDeclaration.Parser.OfType<Declaration, Token>()
-            .Or(NamespaceDeclaration.Parser);
+            .Or(NamespaceDeclaration.Parser)
+            .Or(ImportDeclaration.Parser.OfType<Declaration, Token>());
     }
 }

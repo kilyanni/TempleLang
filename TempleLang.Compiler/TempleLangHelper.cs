@@ -51,9 +51,12 @@
         {
             parserError = null;
             Parser.NamespaceDeclaration? merged = null;
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var (text, source) in files)
             {
+                visited.Add(source.Path);
+
                 using var stringReader = new StringReader(text);
                 var lexemes = Lex(stringReader, source);
                 var result = ParseEoF(Parser.NamespaceDeclaration.FileParser, lexemes);
@@ -62,6 +65,14 @@
                 {
                     diagnostics = Array.Empty<DiagnosticInfo>();
                     parserError = result;
+                    return null;
+                }
+
+                var importError = ResolveImports(result.Result, Path.GetDirectoryName(source.Path)!, visited);
+                if (importError != null)
+                {
+                    diagnostics = Array.Empty<DiagnosticInfo>();
+                    parserError = importError;
                     return null;
                 }
 
@@ -75,6 +86,44 @@
             var procedureCompilations = compiler.Compile(merged, out diagnostics);
             if (procedureCompilations == null) return null;
             return new Compilation(procedureCompilations, compiler.Externs, compiler.Imports, compiler.ConstantTable);
+        }
+
+        private static IParserResult<Parser.NamespaceDeclaration, Token>? ResolveImports(
+            Parser.NamespaceDeclaration ns,
+            string baseDir,
+            HashSet<string> visited)
+        {
+            var expanded = new List<Parser.Declaration>();
+
+            foreach (var decl in ns.Declarations)
+            {
+                if (decl is Parser.ImportDeclaration importDecl)
+                {
+                    var importPath = Path.GetFullPath(Path.Combine(baseDir, importDecl.Path));
+
+                    if (!visited.Add(importPath)) continue;
+
+                    var text = File.ReadAllText(importPath);
+                    using var sr = new StringReader(text);
+                    var lexemes = Lex(sr, new SourceFile(Path.GetFileName(importPath), importPath));
+                    var result = ParseEoF(Parser.NamespaceDeclaration.FileParser, lexemes);
+
+                    if (!result.IsSuccessful) return result;
+
+                    var error = ResolveImports(result.Result, Path.GetDirectoryName(importPath)!, visited);
+                    if (error != null) return error;
+
+                    expanded.AddRange(result.Result.Declarations);
+                }
+                else
+                {
+                    expanded.Add(decl);
+                }
+            }
+
+            ns.Declarations.Clear();
+            ns.Declarations.AddRange(expanded);
+            return null;
         }
 
         public static string? GenerateExecutable(

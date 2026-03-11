@@ -38,6 +38,11 @@
         Using,
 
         /// <summary>
+        /// import
+        /// </summary>
+        Import,
+
+        /// <summary>
         /// namespace
         /// </summary>
         Namespace,

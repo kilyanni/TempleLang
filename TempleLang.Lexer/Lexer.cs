@@ -27,6 +27,7 @@
             ["ref"] = Token.Reference,
             ["deref"] = Token.Dereference,
             ["using"] = Token.Using,
+            ["import"] = Token.Import,
             ["namespace"] = Token.Namespace,
             ["proc"] = Token.Proc
         };
