@@ -6,6 +6,7 @@
     using System.IO;
     using System.Linq;
     using System.Text;
+    using TempleLang.CodeGenerator.NASM;
     using TempleLang.Diagnostic;
     using TempleLang.Lexer;
     using TempleLang.Lexer.Abstractions;
@@ -37,6 +38,7 @@
         public static Compilation? Compile(
             string text,
             SourceFile sourceFile,
+            ICallingConvention callingConvention,
             out IParserResult<Parser.NamespaceDeclaration, Token>? parserError,
             out IEnumerable<DiagnosticInfo> diagnostics)
         {
@@ -55,7 +57,7 @@
 
             parserError = null;
 
-            var compiler = new DeclarationCompiler();
+            var compiler = new DeclarationCompiler(callingConvention);
 
             var procedureCompilations = compiler.Compile(parserResult.Result, out diagnostics);
             if (procedureCompilations == null) return null;
@@ -64,6 +66,7 @@
 
         public static string? GenerateExecutable(
             Compilation compilation,
+            IToolchain toolchain,
             string name,
             string tempPath,
             string execFile,
@@ -73,7 +76,7 @@
 
             builder.AppendLine("section .data");
 
-            foreach (var instruction in compilation.WriteConstantTable()) builder.AppendLine(instruction.ToNASM());
+            foreach (var instruction in compilation.WriteConstantTable(s => toolchain.EncodeStringConstant(s))) builder.AppendLine(instruction.ToNASM());
 
             builder.AppendLine("section .text");
 
@@ -85,7 +88,7 @@
 
             tempPath = Path.GetFullPath(tempPath);
             string asmFile = Path.Combine(tempPath, name + ".asm");
-            string objFile = Path.Combine(tempPath, name + ".obj");
+            string objFile = Path.Combine(tempPath, name + toolchain.ObjectFileExtension);
 
             string ilFile = Path.Combine(Path.GetDirectoryName(execFile), name + ".tlil");
 
@@ -97,7 +100,7 @@
                 File.WriteAllText(ilFile, string.Join(Environment.NewLine, compilation.WriteIntermediate()));
             }
 
-            string nasmArguments = $"-f win64 -o \"{objFile}\" \"{asmFile}\"";
+            string nasmArguments = $"-f {toolchain.NasmFormat} -o \"{objFile}\" \"{asmFile}\"";
             Console.WriteLine("> nasm " + nasmArguments);
             Process.Start("nasm", nasmArguments).WaitForExit();
 
@@ -105,13 +108,8 @@
 
             Directory.CreateDirectory(Path.GetDirectoryName(execFile));
 
-            //                                                                      Hack: LINK.EXE doesn't properly find kernel32.lib otherwise
-            string linkLibraries = string.Join(" ", compilation.Imports.Select(x => $@"""C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\x64\{x}"""));
-            string linkArguments = $"/entry:_start /debug /subsystem:console /out:\"{execFile}\" \"{objFile}\" {linkLibraries}";
-
-            Console.WriteLine("");
-            Console.WriteLine("> link " + linkArguments);
-            Process.Start("link", linkArguments).WaitForExit();
+            Console.WriteLine();
+            toolchain.Link(objFile, compilation.Imports, execFile);
 
             return File.Exists(execFile) ? Path.GetFullPath(execFile) : null;
         }

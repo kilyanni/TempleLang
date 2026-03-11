@@ -1,34 +1,31 @@
 section .data
 FALSE: equ     0
 TRUE: equ     1
-ptrC0: dq      __utf16__(`Start\n`)
+ptrC0: db      `Start\n`
 longC1: equ     6
 longC2: equ     10
 longC3: equ     420
 longC4: equ     2
-ptrC5: dq      __utf16__(`\n`)
+ptrC5: db      `\n`
 longC6: equ     94813
 longC7: equ     42133
-ptrC8: dq      __utf16__(`, `)
+ptrC8: db      `, `
 longC9: equ     8
 longC10: equ     7
-ptrC11: dq      __utf16__(`-`)
-ptrC12: dq      __utf16__(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ`)
-longC13: equ     11
+ptrC11: db      `-`
+ptrC12: db      `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ`
 section .text
     global  _start
-    extern  HeapAlloc
-    extern  HeapFree
-    extern  GetProcessHeap
-    extern  GetStdHandle
-    extern  WriteConsoleW
+    extern  malloc
+    extern  free
+    extern  write
 _start: ; _start() : long
-        sub     qword rsp, 80 ; Allocate stack
+        sub     qword rsp, 48 ; Allocate stack
     
       ; _ = Call print(Start\n, 6)
       ; In = {  }
-        mov     qword rcx, qword ptrC0 ; Pass parameter #0
-        mov     qword rdx, qword longC1 ; Pass parameter #1
+        mov     qword rdi, qword ptrC0 ; Pass parameter #0
+        mov     qword rsi, qword longC1 ; Pass parameter #1
         call    print
       ; Out = {  }
       ; /
@@ -41,11 +38,11 @@ _start: ; _start() : long
     
       ; <>T1 = Call arrInit(size)
       ; In = { size }
-        mov     qword [rsp + 64], qword r15 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
+        mov     qword [rsp + 32], qword r15 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
         call    arrInit
         mov     qword r14, qword rax ; Assign return value to <>T1
-        mov     qword r15, qword [rsp + 64] ; Restore live variable from stack (size)
+        mov     qword r15, qword [rsp + 32] ; Restore live variable from stack (size)
       ; Out = { <>T1, size }
       ; /
     
@@ -112,16 +109,16 @@ _start: ; _start() : long
     
       ; <>T7 = Call pseudoRandom(seed)
       ; In = { arr, seed, size, i }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r12 ; Store live variable onto stack (seed)
-        mov     qword [rsp + 48], qword r15 ; Store live variable onto stack (size)
-        mov     qword [rsp + 40], qword r14 ; Store live variable onto stack (i)
-        mov     qword rcx, qword [rsp + 56] ; Pass parameter #0
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r12 ; Store live variable onto stack (seed)
+        mov     qword [rsp + 16], qword r15 ; Store live variable onto stack (size)
+        mov     qword [rsp + 8], qword r14 ; Store live variable onto stack (i)
+        mov     qword rdi, qword [rsp + 24] ; Pass parameter #0
         call    pseudoRandom
         mov     qword r10, qword rax ; Assign return value to <>T7
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r15, qword [rsp + 48] ; Restore live variable from stack (size)
-        mov     qword r14, qword [rsp + 40] ; Restore live variable from stack (i)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r15, qword [rsp + 16] ; Restore live variable from stack (size)
+        mov     qword r14, qword [rsp + 8] ; Restore live variable from stack (i)
       ; Out = { arr, <>T7, size, i }
       ; /
     
@@ -133,18 +130,18 @@ _start: ; _start() : long
     
       ; <>T8 = Call arrIndex(arr, i)
       ; In = { arr, seed, size, i }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r12 ; Store live variable onto stack (seed)
-        mov     qword [rsp + 48], qword r15 ; Store live variable onto stack (size)
-        mov     qword [rsp + 40], qword r14 ; Store live variable onto stack (i)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 40] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r12 ; Store live variable onto stack (seed)
+        mov     qword [rsp + 16], qword r15 ; Store live variable onto stack (size)
+        mov     qword [rsp + 8], qword r14 ; Store live variable onto stack (i)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 8] ; Pass parameter #1
         call    arrIndex
         mov     qword r11, qword rax ; Assign return value to <>T8
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r12, qword [rsp + 56] ; Restore live variable from stack (seed)
-        mov     qword r15, qword [rsp + 48] ; Restore live variable from stack (size)
-        mov     qword r14, qword [rsp + 40] ; Restore live variable from stack (i)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r12, qword [rsp + 24] ; Restore live variable from stack (seed)
+        mov     qword r15, qword [rsp + 16] ; Restore live variable from stack (size)
+        mov     qword r14, qword [rsp + 8] ; Restore live variable from stack (i)
       ; Out = { <>T8, seed, size, arr, i }
       ; /
     
@@ -184,69 +181,69 @@ _start: ; _start() : long
     
       ; _ = Call printArr(arr, size)
       ; In = { arr, size }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r15 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r15 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
         call    printArr
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r15, qword [rsp + 56] ; Restore live variable from stack (size)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r15, qword [rsp + 24] ; Restore live variable from stack (size)
       ; Out = { arr, size }
       ; /
     
       ; _ = Call print(\n, 1)
       ; In = { arr, size }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r15 ; Store live variable onto stack (size)
-        mov     qword rcx, qword ptrC5 ; Pass parameter #0
-        mov     qword rdx, qword TRUE ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r15 ; Store live variable onto stack (size)
+        mov     qword rdi, qword ptrC5 ; Pass parameter #0
+        mov     qword rsi, qword TRUE ; Pass parameter #1
         call    print
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r15, qword [rsp + 56] ; Restore live variable from stack (size)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r15, qword [rsp + 24] ; Restore live variable from stack (size)
       ; Out = { arr, size }
       ; /
     
       ; _ = Call quickSort(arr, size)
       ; In = { arr, size }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r15 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r15 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
         call    quickSort
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r15, qword [rsp + 56] ; Restore live variable from stack (size)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r15, qword [rsp + 24] ; Restore live variable from stack (size)
       ; Out = { arr, size }
       ; /
     
       ; _ = Call printArr(arr, size)
       ; In = { arr, size }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r15 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r15 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
         call    printArr
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
       ; Out = { arr }
       ; /
     
       ; _ = Call arrFree(arr)
       ; In = { arr }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
         call    arrFree
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 80 ; Return stack
+        add     qword rsp, 48 ; Return stack
         ret     
     
 pseudoRandom: ; pseudoRandom(seed : long) : long
-        sub     qword rsp, 48 ; Allocate stack
+        sub     qword rsp, 16 ; Allocate stack
     
       ; <>T12 = seed Multiply 94813
       ; In = { seed }
-        mov     qword r15, qword rcx ; Assign LHS to target memory
+        mov     qword r15, qword rdi ; Assign LHS to target memory
         imul    qword r15, qword longC6
       ; Out = { <>T12 }
       ; /
@@ -269,13 +266,13 @@ pseudoRandom: ; pseudoRandom(seed : long) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 48 ; Return stack
+        add     qword rsp, 16 ; Return stack
         ret     
     
 quickSort: ; quickSort(arr : ptr, size : long) : long
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
-        mov     qword r13, qword rdx
+        mov     qword r13, qword rsi
       ; <>T14 = size Subtract 1
       ; In = { arr, size }
         mov     qword r14, qword r13 ; Assign LHS to target memory
@@ -285,11 +282,11 @@ quickSort: ; quickSort(arr : ptr, size : long) : long
     
       ; <>T13 = Call quickSortCore(arr, 0, <>T14)
       ; In = { arr, <>T14 }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 40], qword r14 ; Store live variable onto stack (<>T14)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword FALSE ; Pass parameter #1
-        mov     qword r8, qword [rsp + 40] ; Pass parameter #2
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 8], qword r14 ; Store live variable onto stack (<>T14)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        mov     qword rsi, qword FALSE ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 8] ; Pass parameter #2
         call    quickSortCore
         mov     qword r12, qword rax ; Assign return value to <>T13
       ; Out = { <>T13 }
@@ -303,16 +300,16 @@ quickSort: ; quickSort(arr : ptr, size : long) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
 quickSortCore: ; quickSortCore(arr : ptr, lo : long, hi : long) : long
-        sub     qword rsp, 96 ; Allocate stack
+        sub     qword rsp, 64 ; Allocate stack
     
-        mov     qword r13, qword rdx
+        mov     qword r13, qword rsi
       ; <>T15 = lo ComparisonGreaterThanOrEqual hi
       ; In = { arr, hi, lo }
-        cmp     qword r13, qword r8 ; Set condition codes according to operands
+        cmp     qword r13, qword rdx ; Set condition codes according to operands
         jge     .CG0 ; Jump to True if the comparison is true
         mov     qword r12, qword FALSE ; Assign false to output
         jmp     .CG1 ; Jump to Exit
@@ -356,17 +353,17 @@ quickSortCore: ; quickSortCore(arr : ptr, lo : long, hi : long) : long
     
       ; <>T18 = Call partition(arr, lo, hi)
       ; In = { arr, hi, lo }
-        mov     qword [rsp + 80], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 72], qword r8 ; Store live variable onto stack (hi)
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (lo)
-        mov     qword rcx, qword [rsp + 80] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 64] ; Pass parameter #1
-        mov     qword r8, qword [rsp + 72] ; Pass parameter #2
+        mov     qword [rsp + 48], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 40], qword rdx ; Store live variable onto stack (hi)
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (lo)
+        mov     qword rdi, qword [rsp + 48] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 32] ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 40] ; Pass parameter #2
         call    partition
         mov     qword r12, qword rax ; Assign return value to <>T18
-        mov     qword rcx, qword [rsp + 80] ; Restore live variable from stack (arr)
-        mov     qword r8, qword [rsp + 72] ; Restore live variable from stack (hi)
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (lo)
+        mov     qword rdi, qword [rsp + 48] ; Restore live variable from stack (arr)
+        mov     qword rdx, qword [rsp + 40] ; Restore live variable from stack (hi)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (lo)
       ; Out = { arr, <>T18, hi, lo }
       ; /
     
@@ -385,18 +382,18 @@ quickSortCore: ; quickSortCore(arr : ptr, lo : long, hi : long) : long
     
       ; _ = Call quickSortCore(arr, lo, <>T19)
       ; In = { arr, partition, hi, lo, <>T19 }
-        mov     qword [rsp + 80], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 72], qword r11 ; Store live variable onto stack (partition)
-        mov     qword [rsp + 64], qword r8 ; Store live variable onto stack (hi)
-        mov     qword [rsp + 56], qword r13 ; Store live variable onto stack (lo)
-        mov     qword [rsp + 48], qword r10 ; Store live variable onto stack (<>T19)
-        mov     qword rcx, qword [rsp + 80] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
-        mov     qword r8, qword [rsp + 48] ; Pass parameter #2
+        mov     qword [rsp + 48], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 40], qword r11 ; Store live variable onto stack (partition)
+        mov     qword [rsp + 32], qword rdx ; Store live variable onto stack (hi)
+        mov     qword [rsp + 24], qword r13 ; Store live variable onto stack (lo)
+        mov     qword [rsp + 16], qword r10 ; Store live variable onto stack (<>T19)
+        mov     qword rdi, qword [rsp + 48] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 16] ; Pass parameter #2
         call    quickSortCore
-        mov     qword rcx, qword [rsp + 80] ; Restore live variable from stack (arr)
-        mov     qword r11, qword [rsp + 72] ; Restore live variable from stack (partition)
-        mov     qword r8, qword [rsp + 64] ; Restore live variable from stack (hi)
+        mov     qword rdi, qword [rsp + 48] ; Restore live variable from stack (arr)
+        mov     qword r11, qword [rsp + 40] ; Restore live variable from stack (partition)
+        mov     qword rdx, qword [rsp + 32] ; Restore live variable from stack (hi)
       ; Out = { arr, partition, hi }
       ; /
     
@@ -409,36 +406,36 @@ quickSortCore: ; quickSortCore(arr : ptr, lo : long, hi : long) : long
     
       ; _ = Call quickSortCore(arr, <>T20, hi)
       ; In = { arr, <>T20, hi }
-        mov     qword [rsp + 80], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 72], qword r12 ; Store live variable onto stack (<>T20)
-        mov     qword [rsp + 64], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 80] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 72] ; Pass parameter #1
-        mov     qword r8, qword [rsp + 64] ; Pass parameter #2
+        mov     qword [rsp + 48], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 40], qword r12 ; Store live variable onto stack (<>T20)
+        mov     qword [rsp + 32], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 48] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 40] ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 32] ; Pass parameter #2
         call    quickSortCore
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 96 ; Return stack
+        add     qword rsp, 64 ; Return stack
         ret     
     
 partition: ; partition(arr : ptr, lo : long, hi : long) : long
-        sub     qword rsp, 128 ; Allocate stack
+        sub     qword rsp, 80 ; Allocate stack
     
-        mov     qword r14, qword rdx
+        mov     qword r14, qword rsi
       ; <>T22 = Call arrIndex(arr, hi)
       ; In = { arr, lo, hi }
-        mov     qword [rsp + 96], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 88], qword r14 ; Store live variable onto stack (lo)
-        mov     qword [rsp + 80], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 96] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 80] ; Pass parameter #1
+        mov     qword [rsp + 64], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 56], qword r14 ; Store live variable onto stack (lo)
+        mov     qword [rsp + 48], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 64] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 48] ; Pass parameter #1
         call    arrIndex
         mov     qword r13, qword rax ; Assign return value to <>T22
-        mov     qword rcx, qword [rsp + 96] ; Restore live variable from stack (arr)
-        mov     qword r14, qword [rsp + 88] ; Restore live variable from stack (lo)
-        mov     qword r8, qword [rsp + 80] ; Restore live variable from stack (hi)
+        mov     qword rdi, qword [rsp + 64] ; Restore live variable from stack (arr)
+        mov     qword r14, qword [rsp + 56] ; Restore live variable from stack (lo)
+        mov     qword rdx, qword [rsp + 48] ; Restore live variable from stack (hi)
       ; Out = { arr, lo, <>T22, hi }
       ; /
     
@@ -492,7 +489,7 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
     
       ; <>T27 = j ComparisonLessThanOrEqual hi
       ; In = { i, arr, j, pivot, hi }
-        cmp     qword r11, qword r8 ; Set condition codes according to operands
+        cmp     qword r11, qword rdx ; Set condition codes according to operands
         jle     .CG0 ; Jump to True if the comparison is true
         mov     qword r14, qword FALSE ; Assign false to output
         jmp     .CG1 ; Jump to Exit
@@ -511,20 +508,20 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
     
       ; <>T29 = Call arrIndex(arr, j)
       ; In = { i, arr, j, pivot, hi }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r11 ; Store live variable onto stack (j)
-        mov     qword [rsp + 72], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 64], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 80] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r11 ; Store live variable onto stack (j)
+        mov     qword [rsp + 40], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 32], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 48] ; Pass parameter #1
         call    arrIndex
         mov     qword r9, qword rax ; Assign return value to <>T29
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r11, qword [rsp + 80] ; Restore live variable from stack (j)
-        mov     qword r10, qword [rsp + 72] ; Restore live variable from stack (pivot)
-        mov     qword r8, qword [rsp + 64] ; Restore live variable from stack (hi)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r11, qword [rsp + 48] ; Restore live variable from stack (j)
+        mov     qword r10, qword [rsp + 40] ; Restore live variable from stack (pivot)
+        mov     qword rdx, qword [rsp + 32] ; Restore live variable from stack (hi)
       ; Out = { i, arr, <>T29, j, pivot, hi }
       ; /
     
@@ -536,13 +533,13 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
     
       ; _ = elem Assign <>T28
       ; In = { i, arr, <>T28, j, pivot, hi }
-        mov     qword [rsp + 120], qword r14
+        mov     qword r8, qword r14
       ; Out = { i, arr, elem, j, pivot, hi }
       ; /
     
       ; <>T30 = elem ComparisonLessThan pivot
       ; In = { i, arr, elem, j, pivot, hi }
-        cmp     qword [rsp + 120], qword r10 ; Set condition codes according to operands
+        cmp     qword r8, qword r10 ; Set condition codes according to operands
         jl      .CG2 ; Jump to True if the comparison is true
         mov     qword r9, qword FALSE ; Assign false to output
         jmp     .CG3 ; Jump to Exit
@@ -573,95 +570,97 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
     
       ; <>T33 = Call arrIndex(arr, j)
       ; In = { i, arr, elem, j, pivot, hi }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r11 ; Store live variable onto stack (j)
-        mov     qword [rsp + 72], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 64], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 80] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r8 ; Store live variable onto stack (elem)
+        mov     qword [rsp + 40], qword r11 ; Store live variable onto stack (j)
+        mov     qword [rsp + 32], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 24], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 40] ; Pass parameter #1
         call    arrIndex
         mov     qword r9, qword rax ; Assign return value to <>T33
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r11, qword [rsp + 80] ; Restore live variable from stack (j)
-        mov     qword r10, qword [rsp + 72] ; Restore live variable from stack (pivot)
-        mov     qword r8, qword [rsp + 64] ; Restore live variable from stack (hi)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r8, qword [rsp + 48] ; Restore live variable from stack (elem)
+        mov     qword r11, qword [rsp + 40] ; Restore live variable from stack (j)
+        mov     qword r10, qword [rsp + 32] ; Restore live variable from stack (pivot)
+        mov     qword rdx, qword [rsp + 24] ; Restore live variable from stack (hi)
       ; Out = { i, arr, elem, <>T33, j, pivot, hi }
       ; /
     
       ; <>T35 = Call arrIndex(arr, i)
       ; In = { i, arr, elem, <>T33, j, pivot, hi }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r9 ; Store live variable onto stack (<>T33)
-        mov     qword [rsp + 72], qword r11 ; Store live variable onto stack (j)
-        mov     qword [rsp + 64], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 56], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 96] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r8 ; Store live variable onto stack (elem)
+        mov     qword [rsp + 40], qword r9 ; Store live variable onto stack (<>T33)
+        mov     qword [rsp + 32], qword r11 ; Store live variable onto stack (j)
+        mov     qword [rsp + 24], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 16], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 64] ; Pass parameter #1
         call    arrIndex
         mov     qword r14, qword rax ; Assign return value to <>T35
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r9, qword [rsp + 80] ; Restore live variable from stack (<>T33)
-        mov     qword r11, qword [rsp + 72] ; Restore live variable from stack (j)
-        mov     qword r10, qword [rsp + 64] ; Restore live variable from stack (pivot)
-        mov     qword r8, qword [rsp + 56] ; Restore live variable from stack (hi)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r8, qword [rsp + 48] ; Restore live variable from stack (elem)
+        mov     qword r9, qword [rsp + 40] ; Restore live variable from stack (<>T33)
+        mov     qword r11, qword [rsp + 32] ; Restore live variable from stack (j)
+        mov     qword r10, qword [rsp + 24] ; Restore live variable from stack (pivot)
+        mov     qword rdx, qword [rsp + 16] ; Restore live variable from stack (hi)
       ; Out = { i, arr, elem, <>T33, <>T35, j, pivot, hi }
       ; /
     
       ; <>T34 = Dereference <>T35
       ; In = { i, arr, elem, <>T33, <>T35, j, pivot, hi }
-        mov     qword rbx, qword r14 ; Move RHS into register so operation is possible
-        mov     qword rbx, [rbx] ; Dereference <>T35
-        mov     qword [rsp + 112], qword rbx ; Assign result to actual target memory
+        mov     qword rsi, [r14] ; Dereference <>T35
       ; Out = { i, arr, elem, <>T33, <>T34, j, pivot, hi }
       ; /
     
       ; _ = <>T33 ReferenceAssign <>T34
       ; In = { i, arr, elem, <>T33, <>T34, j, pivot, hi }
-        mov     qword rbx, qword [rsp + 112]
-        mov     qword [r9], qword rbx
+        mov     qword [r9], qword rsi
       ; Out = { i, arr, elem, j, pivot, hi }
       ; /
     
       ; <>T36 = Call arrIndex(arr, i)
       ; In = { i, arr, elem, j, pivot, hi }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r11 ; Store live variable onto stack (j)
-        mov     qword [rsp + 72], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 64], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 96] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r8 ; Store live variable onto stack (elem)
+        mov     qword [rsp + 40], qword r11 ; Store live variable onto stack (j)
+        mov     qword [rsp + 32], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 24], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 64] ; Pass parameter #1
         call    arrIndex
         mov     qword r14, qword rax ; Assign return value to <>T36
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r11, qword [rsp + 80] ; Restore live variable from stack (j)
-        mov     qword r10, qword [rsp + 72] ; Restore live variable from stack (pivot)
-        mov     qword r8, qword [rsp + 64] ; Restore live variable from stack (hi)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r8, qword [rsp + 48] ; Restore live variable from stack (elem)
+        mov     qword r11, qword [rsp + 40] ; Restore live variable from stack (j)
+        mov     qword r10, qword [rsp + 32] ; Restore live variable from stack (pivot)
+        mov     qword rdx, qword [rsp + 24] ; Restore live variable from stack (hi)
       ; Out = { i, <>T36, elem, arr, j, pivot, hi }
       ; /
     
       ; _ = <>T36 ReferenceAssign elem
       ; In = { i, <>T36, elem, arr, j, pivot, hi }
-        mov     qword rbx, qword [rsp + 120]
-        mov     qword [r14], qword rbx
+        mov     qword [r14], qword r8
       ; Out = { i, arr, j, pivot, hi }
       ; /
     
       ; <>T37 = i Add 1
       ; In = { i, arr, j, pivot, hi }
-        mov     qword r9, qword r13 ; Assign LHS to target memory
-        add     qword r9, qword TRUE
+        mov     qword rsi, qword r13 ; Assign LHS to target memory
+        add     qword rsi, qword TRUE
       ; Out = { <>T37, arr, j, pivot, hi }
       ; /
     
       ; _ = i Assign <>T37
       ; In = { <>T37, arr, j, pivot, hi }
-        mov     qword r13, qword r9
+        mov     qword r13, qword rsi
       ; Out = { i, arr, j, pivot, hi }
       ; /
     
@@ -685,60 +684,60 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
     
       ; <>T38 = Call arrIndex(arr, hi)
       ; In = { i, arr, pivot, hi }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 72], qword r8 ; Store live variable onto stack (hi)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 72] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 40], qword rdx ; Store live variable onto stack (hi)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 40] ; Pass parameter #1
         call    arrIndex
-        mov     qword r9, qword rax ; Assign return value to <>T38
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r10, qword [rsp + 80] ; Restore live variable from stack (pivot)
+        mov     qword rsi, qword rax ; Assign return value to <>T38
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r10, qword [rsp + 48] ; Restore live variable from stack (pivot)
       ; Out = { i, arr, pivot, <>T38 }
       ; /
     
       ; <>T40 = Call arrIndex(arr, i)
       ; In = { i, arr, pivot, <>T38 }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword [rsp + 72], qword r9 ; Store live variable onto stack (<>T38)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 96] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword [rsp + 40], qword rsi ; Store live variable onto stack (<>T38)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 64] ; Pass parameter #1
         call    arrIndex
         mov     qword r14, qword rax ; Assign return value to <>T40
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 88] ; Restore live variable from stack (arr)
-        mov     qword r10, qword [rsp + 80] ; Restore live variable from stack (pivot)
-        mov     qword r9, qword [rsp + 72] ; Restore live variable from stack (<>T38)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 56] ; Restore live variable from stack (arr)
+        mov     qword r10, qword [rsp + 48] ; Restore live variable from stack (pivot)
+        mov     qword rsi, qword [rsp + 40] ; Restore live variable from stack (<>T38)
       ; Out = { i, arr, pivot, <>T38, <>T40 }
       ; /
     
       ; <>T39 = Dereference <>T40
       ; In = { i, arr, pivot, <>T38, <>T40 }
-        mov     qword r8, [r14] ; Dereference <>T40
+        mov     qword rdx, [r14] ; Dereference <>T40
       ; Out = { i, arr, pivot, <>T38, <>T39 }
       ; /
     
       ; _ = <>T38 ReferenceAssign <>T39
       ; In = { i, arr, pivot, <>T38, <>T39 }
-        mov     qword [r9], qword r8
+        mov     qword [rsi], qword rdx
       ; Out = { i, arr, pivot }
       ; /
     
       ; <>T41 = Call arrIndex(arr, i)
       ; In = { i, arr, pivot }
-        mov     qword [rsp + 96], qword r13 ; Store live variable onto stack (i)
-        mov     qword [rsp + 88], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 80], qword r10 ; Store live variable onto stack (pivot)
-        mov     qword rcx, qword [rsp + 88] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 96] ; Pass parameter #1
+        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (i)
+        mov     qword [rsp + 56], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 48], qword r10 ; Store live variable onto stack (pivot)
+        mov     qword rdi, qword [rsp + 56] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 64] ; Pass parameter #1
         call    arrIndex
         mov     qword r14, qword rax ; Assign return value to <>T41
-        mov     qword r13, qword [rsp + 96] ; Restore live variable from stack (i)
-        mov     qword r10, qword [rsp + 80] ; Restore live variable from stack (pivot)
+        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (i)
+        mov     qword r10, qword [rsp + 48] ; Restore live variable from stack (pivot)
       ; Out = { i, <>T41, pivot }
       ; /
     
@@ -756,19 +755,19 @@ partition: ; partition(arr : ptr, lo : long, hi : long) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 128 ; Return stack
+        add     qword rsp, 80 ; Return stack
         ret     
     
 arrInit: ; arrInit(size : long) : ptr
-        sub     qword rsp, 80 ; Allocate stack
+        sub     qword rsp, 48 ; Allocate stack
     
       ; <>T42 = Call arrAlloc(size)
       ; In = { size }
-        mov     qword [rsp + 64], qword rcx ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
+        mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
         call    arrAlloc
         mov     qword r15, qword rax ; Assign return value to <>T42
-        mov     qword rcx, qword [rsp + 64] ; Restore live variable from stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (size)
       ; Out = { <>T42, size }
       ; /
     
@@ -810,7 +809,7 @@ arrInit: ; arrInit(size : long) : ptr
     
       ; <>T47 = i ComparisonLessThan size
       ; In = { arr, i, size }
-        cmp     qword r12, qword rcx ; Set condition codes according to operands
+        cmp     qword r12, qword rdi ; Set condition codes according to operands
         jl      .CG0 ; Jump to True if the comparison is true
         mov     qword r15, qword FALSE ; Assign false to output
         jmp     .CG1 ; Jump to Exit
@@ -829,16 +828,16 @@ arrInit: ; arrInit(size : long) : ptr
     
       ; <>T48 = Call arrIndex(arr, i)
       ; In = { arr, i, size }
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r12 ; Store live variable onto stack (i)
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r13 ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r12 ; Store live variable onto stack (i)
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
         call    arrIndex
         mov     qword r11, qword rax ; Assign return value to <>T48
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r12, qword [rsp + 56] ; Restore live variable from stack (i)
-        mov     qword rcx, qword [rsp + 48] ; Restore live variable from stack (size)
+        mov     qword r13, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r12, qword [rsp + 24] ; Restore live variable from stack (i)
+        mov     qword rdi, qword [rsp + 16] ; Restore live variable from stack (size)
       ; Out = { <>T48, arr, i, size }
       ; /
     
@@ -868,16 +867,16 @@ arrInit: ; arrInit(size : long) : ptr
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 80 ; Return stack
+        add     qword rsp, 48 ; Return stack
         ret     
     
 arrFree: ; arrFree(arr : ptr) : long
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
       ; <>T49 = Call free(arr)
       ; In = { arr }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (arr)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (arr)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
         call    free
         mov     qword r15, qword rax ; Assign return value to <>T49
       ; Out = { <>T49 }
@@ -891,13 +890,13 @@ arrFree: ; arrFree(arr : ptr) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
 printArr: ; printArr(arr : ptr, size : long) : long
-        sub     qword rsp, 80 ; Allocate stack
+        sub     qword rsp, 48 ; Allocate stack
     
-        mov     qword r13, qword rdx
+        mov     qword r13, qword rsi
       ; _ = i Assign 0
       ; In = { arr, size }
         mov     qword r14, qword FALSE
@@ -980,15 +979,15 @@ printArr: ; printArr(arr : ptr, size : long) : long
     
       ; _ = Call print(, , 2)
       ; In = { arr, i, size }
-        mov     qword [rsp + 64], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r14 ; Store live variable onto stack (i)
-        mov     qword [rsp + 48], qword r13 ; Store live variable onto stack (size)
-        mov     qword rcx, qword ptrC8 ; Pass parameter #0
-        mov     qword rdx, qword longC4 ; Pass parameter #1
+        mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r14 ; Store live variable onto stack (i)
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (size)
+        mov     qword rdi, qword ptrC8 ; Pass parameter #0
+        mov     qword rsi, qword longC4 ; Pass parameter #1
         call    print
-        mov     qword rcx, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r14, qword [rsp + 56] ; Restore live variable from stack (i)
-        mov     qword r13, qword [rsp + 48] ; Restore live variable from stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r14, qword [rsp + 24] ; Restore live variable from stack (i)
+        mov     qword r13, qword [rsp + 16] ; Restore live variable from stack (size)
       ; Out = { arr, i, size }
       ; /
     
@@ -1000,16 +999,16 @@ printArr: ; printArr(arr : ptr, size : long) : long
     
       ; <>T59 = Call arrIndex(arr, i)
       ; In = { arr, i, size }
-        mov     qword [rsp + 64], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 56], qword r14 ; Store live variable onto stack (i)
-        mov     qword [rsp + 48], qword r13 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 56] ; Pass parameter #1
+        mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 24], qword r14 ; Store live variable onto stack (i)
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 24] ; Pass parameter #1
         call    arrIndex
         mov     qword r11, qword rax ; Assign return value to <>T59
-        mov     qword rcx, qword [rsp + 64] ; Restore live variable from stack (arr)
-        mov     qword r14, qword [rsp + 56] ; Restore live variable from stack (i)
-        mov     qword r13, qword [rsp + 48] ; Restore live variable from stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (arr)
+        mov     qword r14, qword [rsp + 24] ; Restore live variable from stack (i)
+        mov     qword r13, qword [rsp + 16] ; Restore live variable from stack (size)
       ; Out = { <>T59, arr, i, size }
       ; /
     
@@ -1021,15 +1020,15 @@ printArr: ; printArr(arr : ptr, size : long) : long
     
       ; _ = Call printNum(<>T58)
       ; In = { <>T58, arr, i, size }
-        mov     qword [rsp + 64], qword r12 ; Store live variable onto stack (<>T58)
-        mov     qword [rsp + 56], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 48], qword r14 ; Store live variable onto stack (i)
-        mov     qword [rsp + 40], qword r13 ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
+        mov     qword [rsp + 32], qword r12 ; Store live variable onto stack (<>T58)
+        mov     qword [rsp + 24], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 16], qword r14 ; Store live variable onto stack (i)
+        mov     qword [rsp + 8], qword r13 ; Store live variable onto stack (size)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
         call    printNum
-        mov     qword rcx, qword [rsp + 56] ; Restore live variable from stack (arr)
-        mov     qword r14, qword [rsp + 48] ; Restore live variable from stack (i)
-        mov     qword r13, qword [rsp + 40] ; Restore live variable from stack (size)
+        mov     qword rdi, qword [rsp + 24] ; Restore live variable from stack (arr)
+        mov     qword r14, qword [rsp + 16] ; Restore live variable from stack (i)
+        mov     qword r13, qword [rsp + 8] ; Restore live variable from stack (size)
       ; Out = { arr, i, size }
       ; /
     
@@ -1046,11 +1045,11 @@ printArr: ; printArr(arr : ptr, size : long) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 80 ; Return stack
+        add     qword rsp, 48 ; Return stack
         ret     
     
 arrSize: ; arrSize(arr : ptr) : long
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
       ; <>T62 = ArithmeticNegation 1
       ; In = { arr }
@@ -1061,10 +1060,10 @@ arrSize: ; arrSize(arr : ptr) : long
     
       ; <>T61 = Call arrIndex(arr, <>T62)
       ; In = { arr, <>T62 }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (arr)
-        mov     qword [rsp + 40], qword r14 ; Store live variable onto stack (<>T62)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 40] ; Pass parameter #1
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (arr)
+        mov     qword [rsp + 8], qword r14 ; Store live variable onto stack (<>T62)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 8] ; Pass parameter #1
         call    arrIndex
         mov     qword r13, qword rax ; Assign return value to <>T61
       ; Out = { <>T61 }
@@ -1084,24 +1083,24 @@ arrSize: ; arrSize(arr : ptr) : long
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
 arrAlloc: ; arrAlloc(size : long) : ptr
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
       ; <>T64 = size Multiply 8
       ; In = { size }
-        mov     qword r15, qword rcx ; Assign LHS to target memory
+        mov     qword r15, qword rdi ; Assign LHS to target memory
         imul    qword r15, qword longC9
       ; Out = { <>T64 }
       ; /
     
-      ; <>T63 = Call alloc(<>T64)
+      ; <>T63 = Call malloc(<>T64)
       ; In = { <>T64 }
-        mov     qword [rsp + 48], qword r15 ; Store live variable onto stack (<>T64)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        call    alloc
+        mov     qword [rsp + 16], qword r15 ; Store live variable onto stack (<>T64)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        call    malloc
         mov     qword r13, qword rax ; Assign return value to <>T63
       ; Out = { <>T63 }
       ; /
@@ -1114,16 +1113,16 @@ arrAlloc: ; arrAlloc(size : long) : ptr
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
 arrIndex: ; arrIndex(arr : ptr, index : long) : ptr
-        sub     qword rsp, 48 ; Allocate stack
+        sub     qword rsp, 16 ; Allocate stack
     
-        mov     qword r14, qword rdx
+        mov     qword r14, qword rsi
       ; <>T66 = arr Add 7
       ; In = { arr, index }
-        mov     qword r15, qword rcx ; Assign LHS to target memory
+        mov     qword r15, qword rdi ; Assign LHS to target memory
         add     qword r15, qword longC10
       ; Out = { <>T66, index }
       ; /
@@ -1137,191 +1136,109 @@ arrIndex: ; arrIndex(arr : ptr, index : long) : ptr
     
       ; <>T65 = <>T66 Add <>T67
       ; In = { <>T66, <>T67 }
-        mov     qword rcx, qword r15 ; Assign LHS to target memory
-        add     qword rcx, qword r12
+        mov     qword rdi, qword r15 ; Assign LHS to target memory
+        add     qword rdi, qword r12
       ; Out = { <>T65 }
       ; /
     
       ; Return <>T65
       ; In = { <>T65 }
-        mov     qword rax, qword rcx ; Return <>T65
+        mov     qword rax, qword rdi ; Return <>T65
         jmp     .__exit
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 48 ; Return stack
-        ret     
-    
-alloc: ; alloc(size : long) : ptr
-        sub     qword rsp, 64 ; Allocate stack
-    
-      ; <>T68 = Call GetProcessHeap()
-      ; In = { size }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (size)
-        call    GetProcessHeap
-        mov     qword r15, qword rax ; Assign return value to <>T68
-        mov     qword rcx, qword [rsp + 48] ; Restore live variable from stack (size)
-      ; Out = { <>T68, size }
-      ; /
-    
-      ; _ = heapHandle Assign <>T68
-      ; In = { <>T68, size }
-        mov     qword r13, qword r15
-      ; Out = { heapHandle, size }
-      ; /
-    
-      ; <>T69 = Call HeapAlloc(heapHandle, 0, size)
-      ; In = { heapHandle, size }
-        mov     qword [rsp + 48], qword r13 ; Store live variable onto stack (heapHandle)
-        mov     qword [rsp + 40], qword rcx ; Store live variable onto stack (size)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword FALSE ; Pass parameter #1
-        mov     qword r8, qword [rsp + 40] ; Pass parameter #2
-        call    HeapAlloc
-        mov     qword r12, qword rax ; Assign return value to <>T69
-      ; Out = { <>T69 }
-      ; /
-    
-      ; Return <>T69
-      ; In = { <>T69 }
-        mov     qword rax, qword r12 ; Return <>T69
-        jmp     .__exit
-      ; Out = {  }
-      ; /
-    
-    .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
-        ret     
-    
-free: ; free(position : ptr) : bool
-        sub     qword rsp, 64 ; Allocate stack
-    
-      ; <>T70 = Call GetProcessHeap()
-      ; In = { position }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (position)
-        call    GetProcessHeap
-        mov     qword r15, qword rax ; Assign return value to <>T70
-        mov     qword rcx, qword [rsp + 48] ; Restore live variable from stack (position)
-      ; Out = { <>T70, position }
-      ; /
-    
-      ; _ = heapHandle Assign <>T70
-      ; In = { <>T70, position }
-        mov     qword r13, qword r15
-      ; Out = { heapHandle, position }
-      ; /
-    
-      ; <>T71 = Call HeapFree(heapHandle, 0, position)
-      ; In = { heapHandle, position }
-        mov     qword [rsp + 48], qword r13 ; Store live variable onto stack (heapHandle)
-        mov     qword [rsp + 40], qword rcx ; Store live variable onto stack (position)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword FALSE ; Pass parameter #1
-        mov     qword r8, qword [rsp + 40] ; Pass parameter #2
-        call    HeapFree
-        mov     qword r12, qword rax ; Assign return value to <>T71
-      ; Out = { <>T71 }
-      ; /
-    
-      ; Return <>T71
-      ; In = { <>T71 }
-        mov     qword rax, qword r12 ; Return <>T71
-        jmp     .__exit
-      ; Out = {  }
-      ; /
-    
-    .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 16 ; Return stack
         ret     
     
 printNum: ; printNum(num : long) : long
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
-      ; <>T72 = Call printNumAny(num, 10)
+      ; <>T68 = Call printNumAny(num, 10)
       ; In = { num }
-        mov     qword [rsp + 48], qword rcx ; Store live variable onto stack (num)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword longC2 ; Pass parameter #1
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (num)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        mov     qword rsi, qword longC2 ; Pass parameter #1
         call    printNumAny
-        mov     qword r15, qword rax ; Assign return value to <>T72
-      ; Out = { <>T72 }
+        mov     qword r15, qword rax ; Assign return value to <>T68
+      ; Out = { <>T68 }
       ; /
     
-      ; Return <>T72
-      ; In = { <>T72 }
-        mov     qword rax, qword r15 ; Return <>T72
+      ; Return <>T68
+      ; In = { <>T68 }
+        mov     qword rax, qword r15 ; Return <>T68
         jmp     .__exit
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
 printNumAny: ; printNumAny(num : long, base : long) : long
-        sub     qword rsp, 80 ; Allocate stack
+        sub     qword rsp, 48 ; Allocate stack
     
-        mov     qword r14, qword rdx
-      ; <>T73 = num ComparisonLessThan 0
+        mov     qword r14, qword rsi
+      ; <>T69 = num ComparisonLessThan 0
       ; In = { num, base }
-        cmp     qword rcx, qword FALSE ; Set condition codes according to operands
+        cmp     qword rdi, qword FALSE ; Set condition codes according to operands
         jl      .CG0 ; Jump to True if the comparison is true
         mov     qword r13, qword FALSE ; Assign false to output
         jmp     .CG1 ; Jump to Exit
     .CG0:          ; True
         mov     qword r13, qword TRUE ; Assign true to output
     .CG1:          ; Exit
-      ; Out = { num, base, <>T73 }
+      ; Out = { num, base, <>T69 }
       ; /
     
-      ; If <>T73 Jump .T74
-      ; In = { num, base, <>T73 }
+      ; If <>T69 Jump .T70
+      ; In = { num, base, <>T69 }
         test    qword r13, qword r13 ; Set condition codes according to condition
-        jnz     .T74 ; Jump if condition is true/non-zero
+        jnz     .T70 ; Jump if condition is true/non-zero
       ; Out = { num, base }
       ; /
     
-      ; Jump .T75
+      ; Jump .T71
       ; In = { num, base }
-        jmp     .T75
+        jmp     .T71
       ; Out = { num, base }
       ; /
     
-      ; .T74:
+      ; .T70:
       ; In = { num, base }
-    .T74:         
+    .T70:         
       ; Out = { num, base }
       ; /
     
       ; _ = Call print(-, 1)
       ; In = { num, base }
-        mov     qword [rsp + 64], qword rcx ; Store live variable onto stack (num)
-        mov     qword [rsp + 56], qword r14 ; Store live variable onto stack (base)
-        mov     qword rcx, qword ptrC11 ; Pass parameter #0
-        mov     qword rdx, qword TRUE ; Pass parameter #1
+        mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (num)
+        mov     qword [rsp + 24], qword r14 ; Store live variable onto stack (base)
+        mov     qword rdi, qword ptrC11 ; Pass parameter #0
+        mov     qword rsi, qword TRUE ; Pass parameter #1
         call    print
-        mov     qword rcx, qword [rsp + 64] ; Restore live variable from stack (num)
-        mov     qword r14, qword [rsp + 56] ; Restore live variable from stack (base)
+        mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (num)
+        mov     qword r14, qword [rsp + 24] ; Restore live variable from stack (base)
       ; Out = { num, base }
       ; /
     
-      ; <>T76 = ArithmeticNegation num
+      ; <>T72 = ArithmeticNegation num
       ; In = { num, base }
-        mov     qword r13, qword rcx ; Assign operand to target
+        mov     qword r13, qword rdi ; Assign operand to target
         neg     qword r13
-      ; Out = { num, base, <>T76 }
+      ; Out = { num, base, <>T72 }
       ; /
     
-      ; _ = Call printNum(<>T76)
-      ; In = { num, base, <>T76 }
-        mov     qword [rsp + 64], qword rcx ; Store live variable onto stack (num)
-        mov     qword [rsp + 56], qword r14 ; Store live variable onto stack (base)
-        mov     qword [rsp + 48], qword r13 ; Store live variable onto stack (<>T76)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
+      ; _ = Call printNum(<>T72)
+      ; In = { num, base, <>T72 }
+        mov     qword [rsp + 32], qword rdi ; Store live variable onto stack (num)
+        mov     qword [rsp + 24], qword r14 ; Store live variable onto stack (base)
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T72)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
         call    printNum
-        mov     qword rcx, qword [rsp + 64] ; Restore live variable from stack (num)
-        mov     qword r14, qword [rsp + 56] ; Restore live variable from stack (base)
+        mov     qword rdi, qword [rsp + 32] ; Restore live variable from stack (num)
+        mov     qword r14, qword [rsp + 24] ; Restore live variable from stack (base)
       ; Out = { num, base }
       ; /
     
@@ -1331,105 +1248,105 @@ printNumAny: ; printNumAny(num : long, base : long) : long
       ; Out = { num, base }
       ; /
     
-      ; .T75:
+      ; .T71:
       ; In = { num, base }
-    .T75:         
+    .T71:         
       ; Out = { num, base }
       ; /
     
-      ; <>T77 = num Remainder base
+      ; <>T73 = num Remainder base
       ; In = { num, base }
         xor     qword rdx, qword rdx ; Empty out higher bits of dividend
-        mov     qword rax, qword rcx ; Assign LHS to dividend
+        mov     qword rax, qword rdi ; Assign LHS to dividend
         idiv    qword r14 ; Assign remainder to RDX, quotient to RAX
         mov     qword r13, qword rdx ; Assign result to target memory
-      ; Out = { <>T77, num, base }
+      ; Out = { <>T73, num, base }
       ; /
     
-      ; _ = digit Assign <>T77
-      ; In = { <>T77, num, base }
+      ; _ = digit Assign <>T73
+      ; In = { <>T73, num, base }
         mov     qword r12, qword r13
       ; Out = { digit, num, base }
       ; /
     
-      ; <>T78 = num Divide base
+      ; <>T74 = num Divide base
       ; In = { digit, num, base }
         xor     qword rdx, qword rdx ; Empty out higher bits of dividend
-        mov     qword rax, qword rcx ; Assign LHS to dividend
+        mov     qword rax, qword rdi ; Assign LHS to dividend
         idiv    qword r14 ; Assign remainder to RDX, quotient to RAX
         mov     qword r11, qword rax ; Assign result to target memory
-      ; Out = { digit, <>T78, base }
+      ; Out = { digit, <>T74, base }
       ; /
     
-      ; _ = rest Assign <>T78
-      ; In = { digit, <>T78, base }
+      ; _ = rest Assign <>T74
+      ; In = { digit, <>T74, base }
         mov     qword r13, qword r11
       ; Out = { digit, rest, base }
       ; /
     
-      ; <>T79 = rest ComparisonGreaterThan 0
+      ; <>T75 = rest ComparisonGreaterThan 0
       ; In = { digit, rest, base }
         cmp     qword r13, qword FALSE ; Set condition codes according to operands
         jg      .CG2 ; Jump to True if the comparison is true
-        mov     qword rcx, qword FALSE ; Assign false to output
+        mov     qword rdi, qword FALSE ; Assign false to output
         jmp     .CG3 ; Jump to Exit
     .CG2:          ; True
-        mov     qword rcx, qword TRUE ; Assign true to output
+        mov     qword rdi, qword TRUE ; Assign true to output
     .CG3:          ; Exit
-      ; Out = { digit, rest, base, <>T79 }
+      ; Out = { digit, rest, base, <>T75 }
       ; /
     
-      ; If <>T79 Jump .T80
-      ; In = { digit, rest, base, <>T79 }
-        test    qword rcx, qword rcx ; Set condition codes according to condition
-        jnz     .T80 ; Jump if condition is true/non-zero
+      ; If <>T75 Jump .T76
+      ; In = { digit, rest, base, <>T75 }
+        test    qword rdi, qword rdi ; Set condition codes according to condition
+        jnz     .T76 ; Jump if condition is true/non-zero
       ; Out = { digit, rest, base }
       ; /
     
-      ; Jump .T81
+      ; Jump .T77
       ; In = { digit }
-        jmp     .T81
+        jmp     .T77
       ; Out = { digit }
       ; /
     
-      ; .T80:
+      ; .T76:
       ; In = { digit, rest, base }
-    .T80:         
+    .T76:         
       ; Out = { digit, rest, base }
       ; /
     
       ; _ = Call printNumAny(rest, base)
       ; In = { digit, rest, base }
-        mov     qword [rsp + 64], qword r12 ; Store live variable onto stack (digit)
-        mov     qword [rsp + 56], qword r13 ; Store live variable onto stack (rest)
-        mov     qword [rsp + 48], qword r14 ; Store live variable onto stack (base)
-        mov     qword rcx, qword [rsp + 56] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 48] ; Pass parameter #1
+        mov     qword [rsp + 32], qword r12 ; Store live variable onto stack (digit)
+        mov     qword [rsp + 24], qword r13 ; Store live variable onto stack (rest)
+        mov     qword [rsp + 16], qword r14 ; Store live variable onto stack (base)
+        mov     qword rdi, qword [rsp + 24] ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 16] ; Pass parameter #1
         call    printNumAny
-        mov     qword r12, qword [rsp + 64] ; Restore live variable from stack (digit)
+        mov     qword r12, qword [rsp + 32] ; Restore live variable from stack (digit)
       ; Out = { digit }
       ; /
     
-      ; .T81:
+      ; .T77:
       ; In = { digit }
-    .T81:         
+    .T77:         
       ; Out = { digit }
       ; /
     
       ; _ = Call printDigit(digit)
       ; In = { digit }
-        mov     qword [rsp + 64], qword r12 ; Store live variable onto stack (digit)
-        mov     qword rcx, qword [rsp + 64] ; Pass parameter #0
+        mov     qword [rsp + 32], qword r12 ; Store live variable onto stack (digit)
+        mov     qword rdi, qword [rsp + 32] ; Pass parameter #0
         call    printDigit
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 80 ; Return stack
+        add     qword rsp, 48 ; Return stack
         ret     
     
 printDigit: ; printDigit(digit : long) : long
-        sub     qword rsp, 64 ; Allocate stack
+        sub     qword rsp, 32 ; Allocate stack
     
       ; _ = digits Assign 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
       ; In = { digit }
@@ -1437,99 +1354,50 @@ printDigit: ; printDigit(digit : long) : long
       ; Out = { digits, digit }
       ; /
     
-      ; <>T83 = digit Multiply 2
+      ; <>T78 = digits Add digit
       ; In = { digits, digit }
-        mov     qword r13, qword rcx ; Assign LHS to target memory
-        imul    qword r13, qword longC4
-      ; Out = { digits, <>T83 }
+        mov     qword r13, qword r15 ; Assign LHS to target memory
+        add     qword r13, qword rdi
+      ; Out = { <>T78 }
       ; /
     
-      ; <>T82 = digits Add <>T83
-      ; In = { digits, <>T83 }
-        mov     qword r12, qword r15 ; Assign LHS to target memory
-        add     qword r12, qword r13
-      ; Out = { <>T82 }
-      ; /
-    
-      ; _ = Call print(<>T82, 1)
-      ; In = { <>T82 }
-        mov     qword [rsp + 48], qword r12 ; Store live variable onto stack (<>T82)
-        mov     qword rcx, qword [rsp + 48] ; Pass parameter #0
-        mov     qword rdx, qword TRUE ; Pass parameter #1
+      ; _ = Call print(<>T78, 1)
+      ; In = { <>T78 }
+        mov     qword [rsp + 16], qword r13 ; Store live variable onto stack (<>T78)
+        mov     qword rdi, qword [rsp + 16] ; Pass parameter #0
+        mov     qword rsi, qword TRUE ; Pass parameter #1
         call    print
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 64 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     
-print: ; print(ptr : ptr, len : long) : long
-        sub     qword rsp, 96 ; Allocate stack
+print: ; print(buf : ptr, len : long) : long
+        sub     qword rsp, 32 ; Allocate stack
     
-        mov     qword r13, qword rdx
-      ; <>T85 = ArithmeticNegation 11
-      ; In = { ptr, len }
-        mov     qword r15, qword longC13 ; Assign operand to target
-        neg     qword r15
-      ; Out = { <>T85, ptr, len }
+        mov     qword r13, qword rsi
+      ; <>T79 = Call write(1, buf, len)
+      ; In = { buf, len }
+        mov     qword [rsp + 16], qword rdi ; Store live variable onto stack (buf)
+        mov     qword [rsp + 8], qword r13 ; Store live variable onto stack (len)
+        mov     qword rdi, qword TRUE ; Pass parameter #0
+        mov     qword rsi, qword [rsp + 16] ; Pass parameter #1
+        mov     qword rdx, qword [rsp + 8] ; Pass parameter #2
+        call    write
+        mov     qword r15, qword rax ; Assign return value to <>T79
+      ; Out = { <>T79 }
       ; /
     
-      ; <>T84 = Call GetStdHandle(<>T85)
-      ; In = { <>T85, ptr, len }
-        mov     qword [rsp + 80], qword r15 ; Store live variable onto stack (<>T85)
-        mov     qword [rsp + 72], qword rcx ; Store live variable onto stack (ptr)
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (len)
-        mov     qword rcx, qword [rsp + 80] ; Pass parameter #0
-        call    GetStdHandle
-        mov     qword r12, qword rax ; Assign return value to <>T84
-        mov     qword rcx, qword [rsp + 72] ; Restore live variable from stack (ptr)
-        mov     qword r13, qword [rsp + 64] ; Restore live variable from stack (len)
-      ; Out = { <>T84, ptr, len }
-      ; /
-    
-      ; _ = stdOut Assign <>T84
-      ; In = { <>T84, ptr, len }
-        mov     qword r11, qword r12
-      ; Out = { stdOut, ptr, len }
-      ; /
-    
-      ; _ = numberOfCharsWritten Assign 0
-      ; In = { stdOut, ptr, len }
-        mov     qword r15, qword FALSE
-      ; Out = { stdOut, ptr, len, numberOfCharsWritten }
-      ; /
-    
-      ; <>T87 = Reference numberOfCharsWritten
-      ; In = { stdOut, ptr, len, numberOfCharsWritten }
-        lea     qword r12, [r15] ; Create reference to numberOfCharsWritten
-      ; Out = { stdOut, ptr, len, <>T87 }
-      ; /
-    
-      ; <>T86 = Call WriteConsoleW(stdOut, ptr, len, <>T87, 0)
-      ; In = { stdOut, ptr, len, <>T87 }
-        mov     qword [rsp + 80], qword r11 ; Store live variable onto stack (stdOut)
-        mov     qword [rsp + 72], qword rcx ; Store live variable onto stack (ptr)
-        mov     qword [rsp + 64], qword r13 ; Store live variable onto stack (len)
-        mov     qword [rsp + 56], qword r12 ; Store live variable onto stack (<>T87)
-        mov     qword rcx, qword [rsp + 80] ; Pass parameter #0
-        mov     qword rdx, qword [rsp + 72] ; Pass parameter #1
-        mov     qword r8, qword [rsp + 64] ; Pass parameter #2
-        mov     qword r9, qword [rsp + 56] ; Pass parameter #3
-        mov     qword [rsp + 64], qword FALSE ; Pass parameter #4
-        call    WriteConsoleW
-        mov     qword r10, qword rax ; Assign return value to <>T86
-      ; Out = { <>T86 }
-      ; /
-    
-      ; Return <>T86
-      ; In = { <>T86 }
-        mov     qword rax, qword r10 ; Return <>T86
+      ; Return <>T79
+      ; In = { <>T79 }
+        mov     qword rax, qword r15 ; Return <>T79
         jmp     .__exit
       ; Out = {  }
       ; /
     
     .__exit:          ; Function exit/return label
-        add     qword rsp, 96 ; Return stack
+        add     qword rsp, 32 ; Return stack
         ret     
     

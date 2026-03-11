@@ -76,6 +76,9 @@
             new Register(RegisterName.RSP, RegisterFlags.Preserved, RegisterSize.Bytes8),
             new Register(RegisterName.RBP, RegisterFlags.Preserved, RegisterSize.Bytes8),
 
+            new Register(RegisterName.RSI, RegisterFlags.GeneralPurpose, RegisterSize.Bytes8),
+            new Register(RegisterName.RDI, RegisterFlags.GeneralPurpose, RegisterSize.Bytes8),
+
 #region 64-Bit General Purpose Rn
 
             new Register(RegisterName.R8,  RegisterFlags.GeneralPurpose, RegisterSize.Bytes8),

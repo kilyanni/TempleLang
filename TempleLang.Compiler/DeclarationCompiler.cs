@@ -14,14 +14,16 @@
     public class DeclarationCompiler
     {
         private Transformer Transformer { get; }
+        private ICallingConvention CallingConvention { get; }
         public Dictionary<Constant, DataLocation> ConstantTable { get; }
         public List<string> Externs { get; }
         public List<string> Imports { get; }
         public DataLocation FalseConstant { get; }
         public DataLocation TrueConstant { get; }
 
-        public DeclarationCompiler()
+        public DeclarationCompiler(ICallingConvention callingConvention)
         {
+            CallingConvention = callingConvention;
             Transformer = new Transformer();
             ConstantTable = new Dictionary<Constant, DataLocation>();
             Externs = new List<string>();
@@ -84,9 +86,9 @@
                     var allocation = RegisterAllocation.Generate(cfg, parameters
                         .Select((x, i) => (x, i)).Where(x => x.i != 1).ToDictionary(
                             x => x.x,
-                            x => ProcedureCompilation.ParameterLocation(x.i)));
+                            x => CallingConvention.ParameterLocation(x.i)));
 
-                    yield return new ProcedureCompilation(procedure, parameters, transformed, ConstantTable, FalseConstant, TrueConstant, allocation);
+                    yield return new ProcedureCompilation(procedure, parameters, transformed, ConstantTable, FalseConstant, TrueConstant, allocation, CallingConvention);
                     break;
 
                 case ProcedureImport import:

@@ -17,6 +17,7 @@
         public DataLocation FalseConstant { get; }
         public DataLocation TrueConstant { get; }
         public RegisterAllocation RegisterAllocation { get; }
+        public ICallingConvention CallingConvention { get; }
         public int StackRegisterTemporary { get; }
         public int StackHomeSpace { get; }
         public int StackEnd { get; }
@@ -28,7 +29,8 @@
             Dictionary<Constant, DataLocation> constantTable,
             DataLocation falseConstant,
             DataLocation trueConstant,
-            RegisterAllocation registerAllocation)
+            RegisterAllocation registerAllocation,
+            ICallingConvention callingConvention)
         {
             Procedure = procedure;
             Parameters = parameters;
@@ -37,6 +39,7 @@
             FalseConstant = falseConstant;
             TrueConstant = trueConstant;
             RegisterAllocation = registerAllocation;
+            CallingConvention = callingConvention;
             StackRegisterTemporary = Align(RegisterAllocation.StackOffset);
 
             var calls = Instructions
@@ -54,10 +57,10 @@
             StackHomeSpace = Align(StackRegisterTemporary + (maxCallDeposit * 8));
 
             int maxParameters = calls.Count > 0
-                ? calls.Max(x => Math.Max(0, x.Call.Parameters.Count - 4)) // - 4 since the first 4 parameters are saved in registers
+                ? calls.Max(x => Math.Max(0, x.Call.Parameters.Count - callingConvention.RegisterParameterCount))
                 : 0;
 
-            StackEnd = StackHomeSpace + 32 + Align(maxParameters * 8);
+            StackEnd = StackHomeSpace + callingConvention.ShadowSpaceSize + Align(maxParameters * 8);
         }
 
         private int Align(int val) => (val / 8) % 2 == 0 ? val : val + 8;
@@ -113,17 +116,7 @@
 
         private IMemory GetMemory(IReadableValue memory) => TryGetMemory(memory) ?? throw new InvalidOperationException($"Unmapped memory value {memory}");
 
-        public static IMemory ParameterLocation(int index)
-        {
-            return index switch
-            {
-                0 => Register.Get(RegisterName.RCX),
-                1 => Register.Get(RegisterName.RDX),
-                2 => Register.Get(RegisterName.R8),
-                3 => Register.Get(RegisterName.R9),
-                _ => new StackLocation(32 + (index - 4) * 8, 8),
-            };
-        }
+        public IMemory ParameterLocation(int index) => CallingConvention.ParameterLocation(index);
 
         private NasmInstruction Move(IMemory target, IParameter source) =>
             NasmInstruction.Call("mov", Param(target), source);

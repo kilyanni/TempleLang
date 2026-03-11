@@ -1,5 +1,6 @@
 ﻿namespace TempleLang.Compiler
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using TempleLang.Bound.Primitives;
@@ -33,16 +34,24 @@
             return ProcedureCompilations.Select(x => new NasmRegion(x.Procedure.Signature, x.Procedure.Name, x.CompileInstructions()));
         }
 
-        public IEnumerable<NasmInstruction> WriteConstantTable()
+        public IEnumerable<NasmInstruction> WriteConstantTable(Func<string, (string Instruction, string Operand)> encodeString)
         {
             foreach (var constant in ConstantTable)
             {
                 var isString = constant.Key.Type == PrimitiveType.Pointer;
 
-                yield return NasmInstruction.LabeledCall(
-                    label: constant.Value.LabelName,
-                    name: constant.Value.IsAddress ? "dq" : "equ",
-                    new LiteralParameter(isString ? $"__utf16__(`{constant.Key.ValueText}`)" : constant.Key.ValueText));
+                if (isString)
+                {
+                    var (instruction, operand) = encodeString(constant.Key.ValueText);
+                    yield return NasmInstruction.LabeledCall(label: constant.Value.LabelName, name: instruction, new LiteralParameter(operand));
+                }
+                else
+                {
+                    yield return NasmInstruction.LabeledCall(
+                        label: constant.Value.LabelName,
+                        name: constant.Value.IsAddress ? "dq" : "equ",
+                        new LiteralParameter(constant.Key.ValueText));
+                }
             }
         }
 
