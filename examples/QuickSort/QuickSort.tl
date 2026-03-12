@@ -23,6 +23,8 @@ proc _start() : long
     printArr(arr, size);
 
     arrFree(arr);
+
+    exit(0);
 }
 
 proc pseudoRandom(seed : long) : long => (seed * 94813) % 42133;

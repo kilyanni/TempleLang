@@ -44,3 +44,8 @@ proc printDigit(digit : long) : long
     let digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     print(digits + digit * 2, 1);
 }
+
+proc exit(code : long) : long
+{
+    // Stub to match Linux, not implemented
+}

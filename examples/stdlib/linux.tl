@@ -16,3 +16,6 @@ proc printDigit(digit : long) : long
     let digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     print(digits + digit, 1);
 }
+
+proc exit(code : long) : long
+    using "libc.so.6";
