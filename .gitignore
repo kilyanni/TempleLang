@@ -342,3 +342,6 @@ healthchecksdb
 
 # Nix build artifacts
 result*
+
+
+*.exe
