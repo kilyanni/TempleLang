@@ -345,3 +345,6 @@ result*
 
 
 *.exe
+
+# Hardcode this specific linux binary build output
+examples/QuickSort/QuickSort
