@@ -21,7 +21,7 @@
           pname = "TempleLang";
           version = "0.1.0";
 
-          src = ./.;
+          src = ./src;
 
           projectFile = "TempleLang.CLI/TempleLang.CLI.csproj";
           nugetDeps = ./nix/deps.json;

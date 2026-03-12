@@ -38,11 +38,11 @@
         {
             Parser.Default.ParseArguments<CompilerOptions>(args).WithParsed(x =>
             {
-                var (callingConvention, toolchain) = ResolvePlatform(x.Platform);
+                var (callingConvention, toolchain, executableSuffix) = ResolvePlatform(x.Platform);
                 var primaryFile = x.SourceFiles.First();
                 var targetPath = Path.GetDirectoryName(x.Target ?? primaryFile) ?? throw new InvalidOperationException("Invalid source path");
                 var tempPath = x.PrintASM ? Path.Combine(targetPath, "ASM") : Path.GetTempPath();
-                var execFile = Compile(x.SourceFiles, tempPath, x.Target, x.PrintIL, callingConvention, toolchain);
+                var execFile = Compile(x.SourceFiles, tempPath, x.Target, x.PrintIL, callingConvention, toolchain, executableSuffix);
 
                 if (execFile == null) return;
 
@@ -55,7 +55,7 @@
             });
         }
 
-        private static (ICallingConvention, IToolchain) ResolvePlatform(string? platform)
+        private static (ICallingConvention, IToolchain, string) ResolvePlatform(string? platform)
         {
             bool isWindows = platform?.ToLowerInvariant() switch
             {
@@ -64,11 +64,11 @@
                 _ => RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
             };
 
-            if (isWindows) return (WindowsX64CallingConvention.Instance, WindowsToolchain.Instance);
-            return (LinuxX64CallingConvention.Instance, LinuxToolchain.Instance);
+            if (isWindows) return (WindowsX64CallingConvention.Instance, WindowsToolchain.Instance, ".exe");
+            return (LinuxX64CallingConvention.Instance, LinuxToolchain.Instance, "");
         }
 
-        private static string? Compile(IEnumerable<string> paths, string tempPath, string? execFile, bool printIL, ICallingConvention callingConvention, IToolchain toolchain)
+        private static string? Compile(IEnumerable<string> paths, string tempPath, string? execFile, bool printIL, ICallingConvention callingConvention, IToolchain toolchain, string executableSuffix)
         {
             var stopwatch = Stopwatch.StartNew();
 
@@ -94,9 +94,11 @@
             if (compiled == null) return null;
 
             var primaryPath = files[0].Source.Path;
+            var execName = Path.GetFileNameWithoutExtension(primaryPath) + executableSuffix;
+
             execFile ??= Path.Combine(
                 Path.GetDirectoryName(primaryPath) ?? throw new ArgumentException("Invalid path"),
-                Path.GetFileNameWithoutExtension(primaryPath) + ".exe");
+                execName);
 
             var file = TempleLangHelper.GenerateExecutable(compiled,
                                                            toolchain,
