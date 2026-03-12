@@ -4,7 +4,7 @@ import "../stdlib/strings.tl";
 
 proc _start() : long
 {
-    print("Start\n", 6);
+    print("Hello World!\n", 13);
 
     let size = 10;
     let arr = arrInit(size);
@@ -16,9 +16,10 @@ proc _start() : long
         arrIndex(arr, i) <- seed % (size * 2);
     }
 
+    print("Unsorted:\n  ", 12);
     printArr(arr, size);
 
-    print("\n", 1);
+    print("\nSorted:\n  ", 10);
     quickSort(arr, size);
     printArr(arr, size);
 
